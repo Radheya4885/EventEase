@@ -1,0 +1,31 @@
+# Virtual environments
+venv/
+nenv/
+.venv/
+env/
+
+# Environment variables (contains passwords!)
+.env
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+
+# Uploaded files (generated at runtime)
+uploads/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Export files (not needed in repo)
+FULL_PROJECT_EXPORT.txt
+schema_dump.txt

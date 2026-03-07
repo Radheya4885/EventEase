@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>EventEase</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+{% for message in messages %}
+<p style="color:green;">{{ message }}</p>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<h1>EventEase</h1>
+
+<p>A smart platform for managing community and college events</p>
+
+<a href="/login">Login</a>
+<a href="/register">Register</a>
+<a href="/events">View Events</a>
+
+</body>
+</html>

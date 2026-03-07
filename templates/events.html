@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Events</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+    <h1>Upcoming Events</h1>
+
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    {% for message in messages %}
+    <p style="color:green;">{{ message }}</p>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <a href="/">Home</a>
+
+    {% for event in events %}
+
+    <div style="border:1px solid black; padding:20px; margin:20px">
+
+        <h2>{{ event[1] }}</h2>
+
+        <img src="/uploads/{{ event[3] }}" width="250">
+
+        <p><b>Description:</b> {{ event[2] }}</p>
+        <p><b>Category:</b> {{ event[4] }}</p>
+        <p><b>Price:</b> ₹{{ event[5] }}</p>
+        <p><b>Date:</b> {{ event[6] }}</p>
+        <p><b>Time:</b> {{ event[7] }}</p>
+        <p><b>Venue:</b> {{ event[8] }}</p>
+
+        <a href="/register_event/{{ event[0] }}">
+            <button>Register for Event</button>
+        </a>
+
+    </div>
+
+    {% endfor %}
+
+</body>
+
+</html>

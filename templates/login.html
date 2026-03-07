@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Login - EventEase</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+<h2>User Login</h2>
+
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+{% for message in messages %}
+<p style="color:red;">{{ message }}</p>
+{% endfor %}
+{% endif %}
+{% endwith %}
+
+<form action="/login" method="POST">
+
+<label>Email:</label>
+<br>
+<input type="email" name="email" required>
+
+<br><br>
+
+<label>Password:</label>
+<br>
+<input type="password" name="password" required>
+
+<br><br>
+
+<button type="submit">Login</button>
+
+</form>
+
+<p>Don't have an account? <a href="/register">Register</a></p>
+
+</body>
+</html>

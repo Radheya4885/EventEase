@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Organizer Dashboard</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+    <h1>Organizer Dashboard</h1>
+
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    {% for message in messages %}
+    <p style="color:green;">{{ message }}</p>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <p>Welcome Organizer! Here you can create and manage events.</p>
+
+    <a href="/create_event">Create Event</a>
+    <a href="/events">View Events</a>
+    <a href="/logout">Logout</a>
+
+</body>
+
+</html>

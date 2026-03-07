@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Create Event</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+    <h1>Create Event</h1>
+
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    {% for message in messages %}
+    <p style="color:green;">{{ message }}</p>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <form action="/create_event" method="POST" enctype="multipart/form-data">
+
+        <label>Title:</label><br>
+        <input type="text" name="title" required><br><br>
+
+        <label>Description:</label><br>
+        <textarea name="description"></textarea><br><br>
+
+        <label>Category:</label><br>
+        <input type="text" name="category"><br><br>
+
+        <label>Price:</label><br>
+        <input type="number" name="price"><br><br>
+
+        <label>Date:</label><br>
+        <input type="date" name="event_date"><br><br>
+
+        <label>Time:</label><br>
+        <input type="time" name="event_time"><br><br>
+
+        <label>Venue:</label><br>
+        <input type="text" name="venue"><br><br>
+
+        <label>Address:</label><br>
+        <textarea name="address"></textarea><br><br>
+
+        <label>Google Map Link:</label><br>
+        <input type="text" name="gmap_link"><br><br>
+
+        <label>Max Participants:</label><br>
+        <input type="number" name="max_participants"><br><br>
+
+        <label>Registration Deadline:</label><br>
+        <input type="date" name="registration_deadline"><br><br>
+
+        <label>Flyer Image:</label><br>
+        <input type="file" name="flyer_image"><br><br>
+
+        <button type="submit">Create Event</button>
+
+    </form>
+
+</body>
+
+</html>

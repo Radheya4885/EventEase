@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Register - EventEase</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+    <h2>User Registration</h2>
+
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    {% for message in messages %}
+    <p style="color:red;">{{ message }}</p>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <form action="/register" method="POST">
+
+        <label>Name:</label>
+        <br>
+        <input type="text" name="name" required>
+        <br><br>
+
+        <label>Email:</label>
+        <br>
+        <input type="email" name="email" required>
+        <br><br>
+
+        <label>Password:</label>
+        <br>
+        <input type="password" name="password" required>
+        <br><br>
+
+        <label>Role:</label>
+        <br>
+
+        <select name="role">
+            <option value="participant">Participant</option>
+            <option value="organizer">Organizer</option>
+            <option value="volunteer">Volunteer</option>
+        </select>
+
+        <br><br>
+
+        <button type="submit">Register</button>
+
+    </form>
+
+    <p>Already have an account? <a href="/login">Login</a></p>
+
+</body>
+
+</html>
