@@ -26,6 +26,6 @@ uploads/
 Thumbs.db
 .DS_Store
 
-# Export files (not needed in repo)
-FULL_PROJECT_EXPORT.txt
-schema_dump.txt
+# Export/dump files
+*.dump
+*.sql

@@ -2,6 +2,8 @@
 
 A Flask-based event management platform where organizers can create events and participants can register for them.
 
+**🔗 Repository:** [github.com/Radheya4885/EventEase](https://github.com/Radheya4885/EventEase)
+
 ---
 
 ## 🚀 Quick Setup (For New Collaborators)
@@ -13,7 +15,7 @@ A Flask-based event management platform where organizers can create events and p
 
 ### Step 1: Clone the Repository
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/Radheya4885/EventEase.git
 cd EventEase
 ```
 
@@ -24,11 +26,11 @@ python -m venv venv
 
 ### Step 3: Activate the Virtual Environment
 **Windows (PowerShell):**
-```bash
+```powershell
 venv\Scripts\Activate.ps1
 ```
 **Windows (CMD):**
-```bash
+```cmd
 venv\Scripts\activate.bat
 ```
 **Mac/Linux:**
@@ -50,7 +52,7 @@ pip install -r requirements.txt
    cp .env.example .env         # Mac/Linux
    ```
 2. Edit `.env` and fill in **YOUR** MySQL credentials:
-   ```
+   ```env
    MYSQL_HOST=localhost
    MYSQL_USER=root
    MYSQL_PASSWORD=your_password_here
@@ -58,67 +60,84 @@ pip install -r requirements.txt
    SECRET_KEY=any-random-string-here
    ```
 
-### Step 6: Run the App
+### Step 6: Set Up the Database
+```bash
+python setup_database.py
+```
+This will create the `eventease` database and all required tables automatically.
+
+### Step 7: Run the App
 ```bash
 python app.py
 ```
 
-The app will **automatically create the database and tables** on first run! 🎉
-
-Open your browser and go to: **http://127.0.0.1:5000**
+Open your browser and go to: **http://127.0.0.1:5000** 🎉
 
 ---
 
 ## 📁 Project Structure
 ```
 EventEase/
-├── app.py                  # Main Flask application
-├── setup_database.py       # Standalone DB setup script (optional)
+├── app.py                  # Main Flask application (all routes & logic)
+├── setup_database.py       # Database setup script (run once on new machine)
 ├── requirements.txt        # Python dependencies
 ├── .env.example            # Template for environment variables
-├── .env                    # YOUR local config (not in git!)
+├── .env                    # YOUR local config (⚠️ not tracked by git)
 ├── .gitignore              # Files excluded from git
-├── templates/              # HTML templates
-│   ├── index.html
-│   ├── login.html
-│   ├── register.html
-│   ├── events.html
-│   ├── create_event.html
+├── README.md               # This file
+├── templates/              # HTML templates (Jinja2)
+│   ├── index.html          # Landing page
+│   ├── login.html          # Login form
+│   ├── register.html       # Registration form
+│   ├── events.html         # Event listing page
+│   ├── create_event.html   # Create new event form
 │   ├── organizer_dashboard.html
 │   ├── participant_dashboard.html
 │   ├── volunteer_dashboard.html
 │   ├── admin_dashboard.html
-│   └── static/             # CSS, JS, images
-└── uploads/                # Uploaded event flyers
+│   └── static/css/         # Stylesheets
+└── uploads/                # Uploaded event flyer images (runtime)
 ```
+
+---
+
+## 👥 Collaboration Workflow
+
+### Getting Latest Changes
+```bash
+git pull origin main
+```
+
+### Making Changes
+```bash
+git add .
+git commit -m "Describe what you changed"
+git push origin main
+```
+
+### ⚠️ Important Rules
+- **Never commit your `.env` file** — it contains your local MySQL password
+- The `.env.example` file shows what variables are needed
+- Each person uses their own MySQL credentials locally
+- Always `git pull` before starting new work to avoid merge conflicts
 
 ---
 
 ## 🔧 Troubleshooting
 
-### "Unknown database 'eventease'"
-The app now auto-creates the database on startup. If you still see this error:
-1. Make sure MySQL Server is **running**
-2. Check your `.env` file has the correct `MYSQL_USER` and `MYSQL_PASSWORD`
-3. Try running: `python setup_database.py`
-
-### Can't install `mysqlclient`
-On Windows, try:
-```bash
-pip install mysqlclient
-```
-If that fails, install the [Visual C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) first.
-
-### App won't start
-- Make sure your virtual environment is **activated** (you should see `(venv)` in your terminal)
-- Make sure all dependencies are installed: `pip install -r requirements.txt`
-- Check the `.env` file exists and has correct values
+| Problem | Solution |
+|---|---|
+| **"Unknown database 'eventease'"** | Run `python setup_database.py` to create the database |
+| **`mysqlclient` won't install** | Install [Visual C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) first, then retry |
+| **App won't start** | Check: venv activated? Dependencies installed? `.env` file exists? |
+| **MySQL connection refused** | Make sure MySQL Server is running on your machine |
+| **"Access denied" for MySQL** | Double-check `MYSQL_USER` and `MYSQL_PASSWORD` in your `.env` file |
 
 ---
 
-## 👥 For Collaborators
-
-- **Never commit your `.env` file** — it contains your local MySQL password
-- The `.env.example` file shows what variables you need to set
-- Each person uses their own MySQL credentials locally
-- The database schema is auto-created, so everyone gets the same tables
+## 🛠️ Tech Stack
+- **Backend:** Python Flask
+- **Database:** MySQL 8.0+
+- **Templating:** Jinja2
+- **Auth:** Werkzeug (password hashing)
+- **Config:** python-dotenv
