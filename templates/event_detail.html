@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ event[1] }} - EventEase</title>
+    <title>{{ event.title }} - EventEase</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -115,7 +115,6 @@
             font-size: 1rem;
         }
 
-        /* Capacity bar */
         .capacity-section {
             margin-bottom: 25px;
         }
@@ -140,7 +139,6 @@
             transition: width 0.5s ease;
         }
 
-        /* Action buttons */
         .actions {
             display: flex;
             gap: 12px;
@@ -230,56 +228,56 @@
         <a href="/events" class="back-link">← Back to Events</a>
 
         <div class="event-hero">
-            {% if event[3] %}
-            <img src="/uploads/{{ event[3] }}" alt="{{ event[1] }}">
+            {% if event.flyer_image %}
+            <img src="/uploads/{{ event.flyer_image }}" alt="{{ event.title }}">
             {% endif %}
 
             <div class="event-body">
-                {% if event[4] %}
-                <span class="category-badge">{{ event[4] }}</span>
+                {% if event.category %}
+                <span class="category-badge">{{ event.category }}</span>
                 {% endif %}
 
-                <h1>{{ event[1] }}</h1>
+                <h1>{{ event.title }}</h1>
 
-                {% if event[2] %}
-                <p class="description">{{ event[2] }}</p>
+                {% if event.description %}
+                <p class="description">{{ event.description }}</p>
                 {% endif %}
 
                 <div class="info-grid">
                     <div class="info-item">
                         <div class="label">📅 Date</div>
-                        <div class="value">{{ event[6] if event[6] else 'TBA' }}</div>
+                        <div class="value">{{ event.event_date if event.event_date else 'TBA' }}</div>
                     </div>
                     <div class="info-item">
                         <div class="label">🕐 Time</div>
-                        <div class="value">{{ event[7] if event[7] else 'TBA' }}</div>
+                        <div class="value">{{ event.event_time if event.event_time else 'TBA' }}</div>
                     </div>
                     <div class="info-item">
                         <div class="label">📍 Venue</div>
-                        <div class="value">{{ event[8] if event[8] else 'TBA' }}</div>
+                        <div class="value">{{ event.venue if event.venue else 'TBA' }}</div>
                     </div>
                     <div class="info-item">
                         <div class="label">💰 Price</div>
-                        <div class="value">{% if event[5] and event[5] > 0 %}₹{{ event[5] }}{% else %}Free{% endif %}
-                        </div>
+                        <div class="value">{% if event.price and event.price > 0 %}₹{{ event.price }}{% else %}Free{%
+                            endif %}</div>
                     </div>
                     <div class="info-item">
                         <div class="label">👤 Organizer</div>
                         <div class="value">{{ organizer_name }}</div>
                     </div>
-                    {% if event[12] %}
+                    {% if event.registration_deadline %}
                     <div class="info-item">
                         <div class="label">⏰ Deadline</div>
-                        <div class="value">{{ event[12] }}</div>
+                        <div class="value">{{ event.registration_deadline }}</div>
                     </div>
                     {% endif %}
                 </div>
 
                 <div class="capacity-section">
-                    <div class="capacity-label">👥 {{ reg_count }} / {{ event[11] }} spots filled</div>
+                    <div class="capacity-label">👥 {{ reg_count }} / {{ event.max_participants }} spots filled</div>
                     <div class="capacity-bar">
                         <div class="capacity-fill"
-                            style="width: {{ (reg_count / event[11] * 100) if event[11] and event[11] > 0 else 0 }}%;">
+                            style="width: {{ (reg_count / event.max_participants * 100) if event.max_participants and event.max_participants > 0 else 0 }}%;">
                         </div>
                     </div>
                 </div>
@@ -287,17 +285,17 @@
                 <div class="actions">
                     {% if session.get('loggedin') %}
                     {% if is_registered %}
-                    <span class="btn btn-success" style="cursor: default;">✓ Registered</span>
-                    <form action="/unregister_event/{{ event[0] }}" method="POST" style="display:inline;">
+                    <span class="btn btn-success" style="cursor:default;">✓ Registered</span>
+                    <form action="/unregister_event/{{ event.id }}" method="POST" style="display:inline;">
                         <button type="submit" class="btn btn-outline">Cancel Registration</button>
                     </form>
                     {% else %}
-                    <a href="/register_event/{{ event[0] }}" class="btn btn-primary">Register Now</a>
+                    <a href="/register_event/{{ event.id }}" class="btn btn-primary">Register Now</a>
                     {% endif %}
 
-                    {% if event[13] == session.get('id') or session.get('role') == 'admin' %}
-                    <a href="/edit_event/{{ event[0] }}" class="btn btn-outline">✏️ Edit</a>
-                    <form action="/delete_event/{{ event[0] }}" method="POST" style="display:inline;"
+                    {% if event.organizer_id == session.get('id') or session.get('role') == 'admin' %}
+                    <a href="/edit_event/{{ event.id }}" class="btn btn-outline">✏️ Edit</a>
+                    <form action="/delete_event/{{ event.id }}" method="POST" style="display:inline;"
                         onsubmit="return confirm('Are you sure you want to delete this event?');">
                         <button type="submit" class="btn btn-danger">🗑️ Delete</button>
                     </form>
@@ -306,8 +304,8 @@
                     <a href="/login" class="btn btn-primary">Login to Register</a>
                     {% endif %}
 
-                    {% if event[10] %}
-                    <a href="{{ event[10] }}" target="_blank" class="btn btn-outline">📍 View on Map</a>
+                    {% if event.gmap_link %}
+                    <a href="{{ event.gmap_link }}" target="_blank" class="btn btn-outline">📍 View on Map</a>
                     {% endif %}
                 </div>
             </div>

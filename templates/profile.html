@@ -213,17 +213,17 @@
         {% endif %}
         {% endwith %}
 
-        <div class="avatar">{{ user[1][0] | upper }}</div>
-        <h1>{{ user[1] }}</h1>
-        <span class="role-badge">{{ user[3] }}</span>
+        <div class="avatar">{{ user.name[0] | upper }}</div>
+        <h1>{{ user.name }}</h1>
+        <span class="role-badge">{{ user.role }}</span>
 
         <div class="info-row">
             <div class="info-label">Email</div>
-            <div class="info-value">{{ user[2] }}</div>
+            <div class="info-value">{{ user.email }}</div>
         </div>
         <div class="info-row">
             <div class="info-label">Member Since</div>
-            <div class="info-value">{{ user[4] }}</div>
+            <div class="info-value">{{ user.created_at }}</div>
         </div>
 
         <div class="stats-row">
@@ -243,7 +243,7 @@
         <form action="/profile/update" method="POST">
             <div class="form-group">
                 <label for="name">Display Name</label>
-                <input type="text" id="name" name="name" value="{{ user[1] }}" required>
+                <input type="text" id="name" name="name" value="{{ user.name }}" required>
             </div>
             <button type="submit" class="btn-update">Save Changes</button>
         </form>

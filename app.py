@@ -23,6 +23,7 @@ app.config['MYSQL_USER'] = os.getenv('MYSQL_USER', 'root')
 app.config['MYSQL_PASSWORD'] = os.getenv('MYSQL_PASSWORD', '')
 app.config['MYSQL_DB'] = os.getenv('MYSQL_DB', 'eventease')
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'fallback-dev-key')
+app.config['MYSQL_CURSORCLASS'] = 'DictCursor'  # Return rows as dictionaries
 
 mysql = MySQL(app)
 
@@ -199,7 +200,6 @@ def register():
     password = request.form.get('password', '')
     role = request.form.get('role', 'participant')
 
-    # Input validation
     if not name or not email or not password:
         flash("All fields are required.")
         return redirect(url_for('register_page'))
@@ -208,27 +208,23 @@ def register():
         flash("Invalid role selected.")
         return redirect(url_for('register_page'))
 
-    # Password strength check
     pwd_errors = validate_password(password)
     if pwd_errors:
         for err in pwd_errors:
             flash(err)
         return redirect(url_for('register_page'))
 
-    # Hash the password for security
     hashed_password = generate_password_hash(password)
 
     try:
         with mysql.connection.cursor() as cursor:
-            cursor.execute("SELECT * FROM users WHERE email=%s", (email,))
-            existing_user = cursor.fetchone()
-
-            if existing_user:
+            cursor.execute("SELECT id FROM users WHERE email=%s", (email,))
+            if cursor.fetchone():
                 flash("Email already registered. Please login.")
                 return redirect(url_for('login_page'))
 
             cursor.execute(
-                "INSERT INTO users(name,email,password,role) VALUES(%s,%s,%s,%s)",
+                "INSERT INTO users(name, email, password, role) VALUES(%s, %s, %s, %s)",
                 (name, email, hashed_password, role)
             )
             mysql.connection.commit()
@@ -266,15 +262,13 @@ def login():
         flash("An error occurred. Please try again.")
         return redirect(url_for('login_page'))
 
-    # Check if user exists and password hash matches
-    if user and check_password_hash(user[3], password):
+    if user and check_password_hash(user['password'], password):
         session['loggedin'] = True
-        session['id'] = user[0]
-        session['name'] = user[1]
-        session['role'] = user[4]
+        session['id'] = user['id']
+        session['name'] = user['name']
+        session['role'] = user['role']
 
-        role = user[4]
-
+        role = user['role']
         if role == "organizer":
             return redirect(url_for("organizer_dashboard"))
         elif role == "volunteer":
@@ -297,15 +291,16 @@ def login():
 def organizer_dashboard():
     try:
         with mysql.connection.cursor() as cursor:
-            cursor.execute("SELECT * FROM events WHERE organizer_id=%s ORDER BY event_date DESC", (session['id'],))
+            cursor.execute("SELECT * FROM events WHERE organizer_id=%s ORDER BY event_date DESC",
+                           (session['id'],))
             my_events = cursor.fetchall()
 
             cursor.execute("""
-                SELECT COUNT(*) FROM registrations r
+                SELECT COUNT(*) AS total FROM registrations r
                 JOIN events e ON r.event_id = e.id
                 WHERE e.organizer_id = %s
             """, (session['id'],))
-            total_registrations = cursor.fetchone()[0]
+            total_registrations = cursor.fetchone()['total']
 
         return render_template("organizer_dashboard.html",
                                my_events=my_events,
@@ -319,14 +314,16 @@ def volunteer_dashboard():
     try:
         with mysql.connection.cursor() as cursor:
             cursor.execute("""
-                SELECT e.*, r.registered_at FROM registrations r
+                SELECT e.id, e.title, e.event_date, e.event_time, e.venue,
+                       r.registered_at
+                FROM registrations r
                 JOIN events e ON r.event_id = e.id
                 WHERE r.user_id = %s ORDER BY e.event_date ASC
             """, (session['id'],))
             my_registrations = cursor.fetchall()
 
-            cursor.execute("SELECT COUNT(*) FROM events WHERE event_date >= CURDATE()")
-            upcoming_count = cursor.fetchone()[0]
+            cursor.execute("SELECT COUNT(*) AS total FROM events WHERE event_date >= CURDATE()")
+            upcoming_count = cursor.fetchone()['total']
 
         return render_template("volunteer_dashboard.html",
                                my_registrations=my_registrations,
@@ -340,7 +337,10 @@ def participant_dashboard():
     try:
         with mysql.connection.cursor() as cursor:
             cursor.execute("""
-                SELECT e.*, r.payment_status, r.registered_at FROM registrations r
+                SELECT e.id, e.title, e.description, e.flyer_image, e.category,
+                       e.price, e.event_date, e.event_time, e.venue,
+                       r.payment_status, r.registered_at
+                FROM registrations r
                 JOIN events e ON r.event_id = e.id
                 WHERE r.user_id = %s ORDER BY e.event_date ASC
             """, (session['id'],))
@@ -356,12 +356,12 @@ def participant_dashboard():
 def admin_dashboard():
     try:
         with mysql.connection.cursor() as cursor:
-            cursor.execute("SELECT COUNT(*) FROM users")
-            total_users = cursor.fetchone()[0]
-            cursor.execute("SELECT COUNT(*) FROM events")
-            total_events = cursor.fetchone()[0]
-            cursor.execute("SELECT COUNT(*) FROM registrations")
-            total_registrations = cursor.fetchone()[0]
+            cursor.execute("SELECT COUNT(*) AS total FROM users")
+            total_users = cursor.fetchone()['total']
+            cursor.execute("SELECT COUNT(*) AS total FROM events")
+            total_events = cursor.fetchone()['total']
+            cursor.execute("SELECT COUNT(*) AS total FROM registrations")
+            total_registrations = cursor.fetchone()['total']
 
             cursor.execute("SELECT id, name, email, role, created_at FROM users ORDER BY created_at DESC")
             all_users = cursor.fetchall()
@@ -388,17 +388,20 @@ def admin_dashboard():
 def profile():
     try:
         with mysql.connection.cursor() as cursor:
-            cursor.execute("SELECT id, name, email, role, created_at FROM users WHERE id=%s", (session['id'],))
+            cursor.execute("SELECT id, name, email, role, created_at FROM users WHERE id=%s",
+                           (session['id'],))
             user = cursor.fetchone()
 
-            cursor.execute("SELECT COUNT(*) FROM registrations WHERE user_id=%s", (session['id'],))
-            reg_count = cursor.fetchone()[0]
+            cursor.execute("SELECT COUNT(*) AS total FROM registrations WHERE user_id=%s",
+                           (session['id'],))
+            reg_count = cursor.fetchone()['total']
 
-            # Get events user organized (if organizer)
-            cursor.execute("SELECT COUNT(*) FROM events WHERE organizer_id=%s", (session['id'],))
-            events_organized = cursor.fetchone()[0]
+            cursor.execute("SELECT COUNT(*) AS total FROM events WHERE organizer_id=%s",
+                           (session['id'],))
+            events_organized = cursor.fetchone()['total']
 
-        return render_template("profile.html", user=user, reg_count=reg_count, events_organized=events_organized)
+        return render_template("profile.html", user=user, reg_count=reg_count,
+                               events_organized=events_organized)
     except Exception:
         flash("Could not load profile.")
         return redirect(url_for('home'))
@@ -407,7 +410,6 @@ def profile():
 @login_required
 def update_profile():
     name = request.form.get('name', '').strip()
-
     if not name:
         flash("Name cannot be empty.")
         return redirect(url_for('profile'))
@@ -458,7 +460,6 @@ def create_event():
     max_participants = request.form.get("max_participants", "100")
     registration_deadline = request.form.get("registration_deadline", "")
 
-    # Server-side validation
     if not title:
         flash("Event title is required.")
         return redirect(url_for('create_event_page'))
@@ -542,10 +543,9 @@ def events():
                 query += " AND category = %s"
                 params.append(category_filter)
 
-            # Total count for pagination
-            count_query = query.replace("SELECT *", "SELECT COUNT(*)", 1)
+            count_query = query.replace("SELECT *", "SELECT COUNT(*) AS total", 1)
             cursor.execute(count_query, params)
-            total = cursor.fetchone()[0]
+            total = cursor.fetchone()['total']
             total_pages = max(1, (total + per_page - 1) // per_page)
 
             query += " ORDER BY event_date DESC LIMIT %s OFFSET %s"
@@ -554,9 +554,10 @@ def events():
             cursor.execute(query, params)
             events_list = cursor.fetchall()
 
-            # Categories for filter dropdown
-            cursor.execute("SELECT DISTINCT category FROM events WHERE category IS NOT NULL AND category != '' ORDER BY category")
-            categories = [row[0] for row in cursor.fetchall()]
+            cursor.execute(
+                "SELECT DISTINCT category FROM events WHERE category IS NOT NULL AND category != '' ORDER BY category"
+            )
+            categories = [row['category'] for row in cursor.fetchall()]
 
         return render_template("events.html", events=events_list, categories=categories,
                                search=search, category_filter=category_filter,
@@ -574,23 +575,19 @@ def event_detail(event_id):
         with mysql.connection.cursor() as cursor:
             cursor.execute("SELECT * FROM events WHERE id=%s", (event_id,))
             event = cursor.fetchone()
-
             if not event:
                 abort(404)
 
-            # Organizer name
-            cursor.execute("SELECT name FROM users WHERE id=%s", (event[13],))
+            cursor.execute("SELECT name FROM users WHERE id=%s", (event['organizer_id'],))
             organizer = cursor.fetchone()
-            organizer_name = organizer[0] if organizer else "Unknown"
+            organizer_name = organizer['name'] if organizer else "Unknown"
 
-            # Registration count
-            cursor.execute("SELECT COUNT(*) FROM registrations WHERE event_id=%s", (event_id,))
-            reg_count = cursor.fetchone()[0]
+            cursor.execute("SELECT COUNT(*) AS total FROM registrations WHERE event_id=%s", (event_id,))
+            reg_count = cursor.fetchone()['total']
 
-            # Check if current user is registered
             is_registered = False
             if 'loggedin' in session:
-                cursor.execute("SELECT * FROM registrations WHERE user_id=%s AND event_id=%s",
+                cursor.execute("SELECT id FROM registrations WHERE user_id=%s AND event_id=%s",
                                (session['id'], event_id))
                 is_registered = cursor.fetchone() is not None
 
@@ -611,14 +608,11 @@ def edit_event_page(event_id):
         with mysql.connection.cursor() as cursor:
             cursor.execute("SELECT * FROM events WHERE id=%s", (event_id,))
             event = cursor.fetchone()
-
             if not event:
                 abort(404)
-
-            if event[13] != session['id'] and session.get('role') != 'admin':
+            if event['organizer_id'] != session['id'] and session.get('role') != 'admin':
                 flash("You do not have permission to edit this event.")
                 return redirect(url_for('events'))
-
         return render_template("edit_event.html", event=event)
     except Exception:
         abort(404)
@@ -630,11 +624,9 @@ def edit_event(event_id):
         with mysql.connection.cursor() as cursor:
             cursor.execute("SELECT * FROM events WHERE id=%s", (event_id,))
             event = cursor.fetchone()
-
             if not event:
                 abort(404)
-
-            if event[13] != session['id'] and session.get('role') != 'admin':
+            if event['organizer_id'] != session['id'] and session.get('role') != 'admin':
                 flash("You do not have permission to edit this event.")
                 return redirect(url_for('events'))
 
@@ -655,7 +647,7 @@ def edit_event(event_id):
                 return redirect(url_for('edit_event_page', event_id=event_id))
 
             flyer = request.files.get("flyer_image")
-            filename = event[3]  # Keep existing
+            filename = event['flyer_image']  # Keep existing
 
             if flyer and flyer.filename != "":
                 if not allowed_file(flyer.filename):
@@ -694,26 +686,20 @@ def delete_event(event_id):
         with mysql.connection.cursor() as cursor:
             cursor.execute("SELECT * FROM events WHERE id=%s", (event_id,))
             event = cursor.fetchone()
-
             if not event:
                 abort(404)
-
-            if event[13] != session['id'] and session.get('role') != 'admin':
+            if event['organizer_id'] != session['id'] and session.get('role') != 'admin':
                 flash("You do not have permission to delete this event.")
                 return redirect(url_for('events'))
-
-            if event[3]:
-                filepath = os.path.join(app.config["UPLOAD_FOLDER"], event[3])
+            if event['flyer_image']:
+                filepath = os.path.join(app.config["UPLOAD_FOLDER"], event['flyer_image'])
                 if os.path.exists(filepath):
                     os.remove(filepath)
-
             cursor.execute("DELETE FROM events WHERE id=%s", (event_id,))
             mysql.connection.commit()
-
         flash("Event deleted successfully!")
     except Exception:
         flash("An error occurred while deleting the event.")
-
     return redirect(url_for('events'))
 
 # -----------------------------
@@ -723,30 +709,28 @@ def delete_event(event_id):
 def register_event(event_id):
     if 'loggedin' in session:
         user_id = session['id']
-
         try:
             with mysql.connection.cursor() as cursor:
-                # Capacity check
                 cursor.execute("SELECT max_participants FROM events WHERE id=%s", (event_id,))
                 event = cursor.fetchone()
                 if not event:
                     flash("Event not found.")
                     return redirect(url_for('events'))
 
-                cursor.execute("SELECT COUNT(*) FROM registrations WHERE event_id=%s", (event_id,))
-                current_count = cursor.fetchone()[0]
-                if current_count >= event[0]:
+                cursor.execute("SELECT COUNT(*) AS total FROM registrations WHERE event_id=%s", (event_id,))
+                current_count = cursor.fetchone()['total']
+                if current_count >= event['max_participants']:
                     flash("Sorry, this event is full.")
                     return redirect(url_for('events'))
 
-                # Duplicate check
-                cursor.execute("SELECT * FROM registrations WHERE user_id=%s AND event_id=%s", (user_id, event_id))
+                cursor.execute("SELECT id FROM registrations WHERE user_id=%s AND event_id=%s",
+                               (user_id, event_id))
                 if cursor.fetchone():
                     flash("You are already registered for this event.")
                     return redirect(url_for('events'))
 
                 cursor.execute(
-                    "INSERT INTO registrations(user_id,event_id,payment_status) VALUES(%s,%s,%s)",
+                    "INSERT INTO registrations(user_id, event_id, payment_status) VALUES(%s, %s, %s)",
                     (user_id, event_id, "pending")
                 )
                 mysql.connection.commit()
@@ -785,7 +769,6 @@ def delete_user(user_id):
     if user_id == session['id']:
         flash("You cannot delete your own account.")
         return redirect(url_for('admin_dashboard'))
-
     try:
         with mysql.connection.cursor() as cursor:
             cursor.execute("DELETE FROM users WHERE id=%s", (user_id,))

@@ -16,7 +16,6 @@
             --text-dark: #2d3436;
             --text-muted: #636e72;
             --success: #00b894;
-            --warning: #fdcb6e;
         }
 
         body {
@@ -49,7 +48,6 @@
             font-size: 1.1rem;
         }
 
-        /* Flash Messages */
         .message {
             background: #d1f7ed;
             color: #008767;
@@ -60,7 +58,6 @@
             font-weight: 600;
         }
 
-        /* Action cards */
         .action-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -103,7 +100,6 @@
             margin: 0;
         }
 
-        /* Registrations Table */
         h2 {
             color: var(--text-dark);
             font-size: 1.5rem;
@@ -225,7 +221,6 @@
             transform: translateY(-2px);
         }
 
-        /* Logout */
         .logout-container {
             margin-top: 40px;
             text-align: center;
@@ -284,19 +279,19 @@
             {% for reg in my_registrations %}
             <li class="reg-item">
                 <div class="reg-info">
-                    <h4><a href="/event/{{ reg[0] }}">{{ reg[1] }}</a></h4>
+                    <h4><a href="/event/{{ reg.id }}">{{ reg.title }}</a></h4>
                     <span class="reg-meta">
-                        📅 {{ reg[6] if reg[6] else 'TBA' }}
-                        &nbsp;·&nbsp; 📍 {{ reg[8] if reg[8] else 'TBA' }}
+                        📅 {{ reg.event_date if reg.event_date else 'TBA' }}
+                        &nbsp;·&nbsp; 📍 {{ reg.venue if reg.venue else 'TBA' }}
                     </span>
                 </div>
                 <div class="reg-actions">
-                    {% if reg[15] == 'paid' %}
+                    {% if reg.payment_status == 'paid' %}
                     <span class="badge badge-paid">Paid</span>
                     {% else %}
                     <span class="badge badge-pending">Pending</span>
                     {% endif %}
-                    <form action="/unregister_event/{{ reg[0] }}" method="POST" style="display:inline;"
+                    <form action="/unregister_event/{{ reg.id }}" method="POST" style="display:inline;"
                         onsubmit="return confirm('Unregister from this event?');">
                         <button type="submit" class="btn-cancel">Cancel</button>
                     </form>
