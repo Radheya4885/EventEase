@@ -312,7 +312,7 @@
         {% endfor %}
         {% if page < total_pages %} <a
             href="/events?page={{ page + 1 }}&search={{ search }}&category={{ category_filter }}">Next →</a>
-            {% endfor %}
+            {% endif %}
     </div>
     {% endif %}
 
