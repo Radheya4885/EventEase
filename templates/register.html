@@ -1,9 +1,87 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
+    <meta charset="UTF-8">
     <title>Register - EventEase</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        body {
+            background-color: #f9f9f9;
+            /* soft neutral background */
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 40px;
+        }
+
+        h2 {
+            color: #6c5ce7;
+            /* bright purple */
+        }
+
+        form {
+            display: inline-block;
+            background: #fff;
+            padding: 20px 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+
+        label {
+            font-weight: bold;
+            color: #333;
+        }
+
+        input,
+        select {
+            width: 250px;
+            padding: 8px;
+            margin-top: 6px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        button {
+            margin-top: 15px;
+            padding: 10px 20px;
+            background-color: #fd79a8;
+            /* vibrant pink */
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #ffeaa7;
+            /* golden yellow hover */
+            color: #333;
+        }
+
+        .message {
+            color: red;
+            font-weight: bold;
+        }
+
+        p {
+            margin-top: 20px;
+            color: #555;
+        }
+
+        a {
+            color: #6c5ce7;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
 </head>
 
 <body>
@@ -13,41 +91,29 @@
     {% with messages = get_flashed_messages() %}
     {% if messages %}
     {% for message in messages %}
-    <p style="color:red;">{{ message }}</p>
+    <p class="message">{{ message }}</p>
     {% endfor %}
     {% endif %}
     {% endwith %}
 
     <form action="/register" method="POST">
+        <label for="name">Name:</label><br>
+        <input type="text" id="name" name="name" required><br><br>
 
-        <label>Name:</label>
-        <br>
-        <input type="text" name="name" required>
-        <br><br>
+        <label for="email">Email:</label><br>
+        <input type="email" id="email" name="email" required><br><br>
 
-        <label>Email:</label>
-        <br>
-        <input type="email" name="email" required>
-        <br><br>
+        <label for="password">Password:</label><br>
+        <input type="password" id="password" name="password" required><br><br>
 
-        <label>Password:</label>
-        <br>
-        <input type="password" name="password" required>
-        <br><br>
-
-        <label>Role:</label>
-        <br>
-
-        <select name="role">
+        <label for="role">Role:</label><br>
+        <select id="role" name="role">
             <option value="participant">Participant</option>
             <option value="organizer">Organizer</option>
             <option value="volunteer">Volunteer</option>
-        </select>
-
-        <br><br>
+        </select><br><br>
 
         <button type="submit">Register</button>
-
     </form>
 
     <p>Already have an account? <a href="/login">Login</a></p>

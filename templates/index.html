@@ -1,27 +1,118 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
-<title>EventEase</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <meta charset="UTF-8">
+    <title>EventEase</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        body {
+            background-color: #f9f9f9;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #6c5ce7;
+        }
+
+        p {
+            color: #555;
+        }
+
+        a {
+            display: inline-block;
+            margin: 10px;
+            padding: 10px 18px;
+            text-decoration: none;
+            background-color: #fd79a8;
+            color: white;
+            border-radius: 6px;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+        }
+
+        a:hover {
+            background-color: #ffeaa7;
+            color: #333;
+        }
+
+        .message {
+            color: #27ae60;
+            font-weight: bold;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin: 25px 0;
+            flex-wrap: wrap;
+        }
+
+        .stat-box {
+            background: #fff;
+            padding: 20px 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            min-width: 130px;
+        }
+
+        .stat-box .number {
+            font-size: 2rem;
+            color: #6c5ce7;
+            font-weight: bold;
+        }
+
+        .stat-box .label {
+            color: #777;
+            font-size: 0.9rem;
+        }
+    </style>
 </head>
 
 <body>
 
-{% with messages = get_flashed_messages() %}
-{% if messages %}
-{% for message in messages %}
-<p style="color:green;">{{ message }}</p>
-{% endfor %}
-{% endif %}
-{% endwith %}
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    {% for message in messages %}
+    <p class="message">{{ message }}</p>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
 
-<h1>EventEase</h1>
+    <h1>Welcome to EventEase</h1>
+    <p>Your smart platform for managing community and college events</p>
 
-<p>A smart platform for managing community and college events</p>
+    <div class="stats">
+        <div class="stat-box">
+            <div class="number">{{ total_events }}</div>
+            <div class="label">Events</div>
+        </div>
+        <div class="stat-box">
+            <div class="number">{{ total_users }}</div>
+            <div class="label">Users</div>
+        </div>
+        <div class="stat-box">
+            <div class="number">{{ total_registrations }}</div>
+            <div class="label">Registrations</div>
+        </div>
+    </div>
 
-<a href="/login">Login</a>
-<a href="/register">Register</a>
-<a href="/events">View Events</a>
+    <div>
+        {% if session.get('loggedin') %}
+        <a href="/events">Browse Events</a>
+        <a href="/profile">My Profile</a>
+        <a href="/logout">Logout</a>
+        {% else %}
+        <a href="/login">Login</a>
+        <a href="/register">Register</a>
+        <a href="/events">View Events</a>
+        {% endif %}
+    </div>
 
 </body>
+
 </html>

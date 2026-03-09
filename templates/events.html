@@ -1,9 +1,93 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
-    <title>Events</title>
+    <meta charset="UTF-8">
+    <title>Events - EventEase</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        body {
+            background-color: #f9f9f9;
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 40px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #6c5ce7;
+            /* bright purple */
+        }
+
+        .message {
+            color: green;
+            font-weight: bold;
+        }
+
+        a {
+            display: inline-block;
+            margin: 10px;
+            padding: 10px 18px;
+            text-decoration: none;
+            background-color: #fd79a8;
+            /* vibrant pink */
+            color: white;
+            border-radius: 6px;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+        }
+
+        a:hover {
+            background-color: #ffeaa7;
+            /* golden yellow hover */
+            color: #333;
+        }
+
+        .event-card {
+            border: 1px solid #ddd;
+            background: #fff;
+            padding: 20px;
+            margin: 20px auto;
+            width: 80%;
+            max-width: 600px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            text-align: left;
+        }
+
+        .event-card h2 {
+            color: #333;
+        }
+
+        .event-card img {
+            display: block;
+            margin: 10px 0;
+            border-radius: 6px;
+        }
+
+        .event-card p {
+            color: #555;
+            margin: 6px 0;
+        }
+
+        .event-card button {
+            margin-top: 10px;
+            padding: 8px 16px;
+            background-color: #6c5ce7;
+            /* purple for action */
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .event-card button:hover {
+            background-color: #3498db;
+            /* blue hover */
+        }
+    </style>
 </head>
 
 <body>
@@ -13,7 +97,7 @@
     {% with messages = get_flashed_messages() %}
     {% if messages %}
     {% for message in messages %}
-    <p style="color:green;">{{ message }}</p>
+    <p class="message">{{ message }}</p>
     {% endfor %}
     {% endif %}
     {% endwith %}
@@ -21,13 +105,9 @@
     <a href="/">Home</a>
 
     {% for event in events %}
-
-    <div style="border:1px solid black; padding:20px; margin:20px">
-
+    <div class="event-card">
         <h2>{{ event[1] }}</h2>
-
-        <img src="/uploads/{{ event[3] }}" width="250">
-
+        <img src="/uploads/{{ event[3] }}" width="250" alt="Event Image">
         <p><b>Description:</b> {{ event[2] }}</p>
         <p><b>Category:</b> {{ event[4] }}</p>
         <p><b>Price:</b> ₹{{ event[5] }}</p>
@@ -38,9 +118,7 @@
         <a href="/register_event/{{ event[0] }}">
             <button>Register for Event</button>
         </a>
-
     </div>
-
     {% endfor %}
 
 </body>

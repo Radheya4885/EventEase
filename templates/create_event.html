@@ -1,9 +1,75 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
-    <title>Create Event</title>
+    <meta charset="UTF-8">
+    <title>Create Event - EventEase</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        body {
+            background-color: #f9f9f9;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #6c5ce7;
+            /* bright purple */
+        }
+
+        .message {
+            color: green;
+            font-weight: bold;
+        }
+
+        form {
+            display: inline-block;
+            background: #fff;
+            padding: 25px 35px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            text-align: left;
+            max-width: 600px;
+            width: 100%;
+        }
+
+        label {
+            font-weight: bold;
+            color: #333;
+        }
+
+        input,
+        textarea,
+        select {
+            width: 100%;
+            padding: 8px;
+            margin-top: 6px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            background-color: #fd79a8;
+            /* vibrant pink */
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #ffeaa7;
+            /* golden yellow hover */
+            color: #333;
+        }
+    </style>
 </head>
 
 <body>
@@ -13,51 +79,49 @@
     {% with messages = get_flashed_messages() %}
     {% if messages %}
     {% for message in messages %}
-    <p style="color:green;">{{ message }}</p>
+    <p class="message">{{ message }}</p>
     {% endfor %}
     {% endif %}
     {% endwith %}
 
     <form action="/create_event" method="POST" enctype="multipart/form-data">
+        <label for="title">Title:</label>
+        <input type="text" id="title" name="title" required>
 
-        <label>Title:</label><br>
-        <input type="text" name="title" required><br><br>
+        <label for="description">Description:</label>
+        <textarea id="description" name="description"></textarea>
 
-        <label>Description:</label><br>
-        <textarea name="description"></textarea><br><br>
+        <label for="category">Category:</label>
+        <input type="text" id="category" name="category">
 
-        <label>Category:</label><br>
-        <input type="text" name="category"><br><br>
+        <label for="price">Price:</label>
+        <input type="number" id="price" name="price">
 
-        <label>Price:</label><br>
-        <input type="number" name="price"><br><br>
+        <label for="event_date">Date:</label>
+        <input type="date" id="event_date" name="event_date">
 
-        <label>Date:</label><br>
-        <input type="date" name="event_date"><br><br>
+        <label for="event_time">Time:</label>
+        <input type="time" id="event_time" name="event_time">
 
-        <label>Time:</label><br>
-        <input type="time" name="event_time"><br><br>
+        <label for="venue">Venue:</label>
+        <input type="text" id="venue" name="venue">
 
-        <label>Venue:</label><br>
-        <input type="text" name="venue"><br><br>
+        <label for="address">Address:</label>
+        <textarea id="address" name="address"></textarea>
 
-        <label>Address:</label><br>
-        <textarea name="address"></textarea><br><br>
+        <label for="gmap_link">Google Map Link:</label>
+        <input type="text" id="gmap_link" name="gmap_link">
 
-        <label>Google Map Link:</label><br>
-        <input type="text" name="gmap_link"><br><br>
+        <label for="max_participants">Max Participants:</label>
+        <input type="number" id="max_participants" name="max_participants">
 
-        <label>Max Participants:</label><br>
-        <input type="number" name="max_participants"><br><br>
+        <label for="registration_deadline">Registration Deadline:</label>
+        <input type="date" id="registration_deadline" name="registration_deadline">
 
-        <label>Registration Deadline:</label><br>
-        <input type="date" name="registration_deadline"><br><br>
-
-        <label>Flyer Image:</label><br>
-        <input type="file" name="flyer_image"><br><br>
+        <label for="flyer_image">Flyer Image:</label>
+        <input type="file" id="flyer_image" name="flyer_image">
 
         <button type="submit">Create Event</button>
-
     </form>
 
 </body>
