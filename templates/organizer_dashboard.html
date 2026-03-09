@@ -1,76 +1,166 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Organizer Dashboard - EventEase</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --primary: #6c5ce7;
+            --primary-soft: #f3f0ff;
+            --secondary: #fd79a8;
+            --bg: #f8f9fa;
+            --white: #ffffff;
+            --text-dark: #2d3436;
+            --text-muted: #636e72;
+        }
+
         body {
-            background-color: #f9f9f9;
-            /* soft neutral background */
-            font-family: Arial, sans-serif;
-            text-align: center;
+            background-color: var(--bg);
+            font-family: 'Inter', sans-serif;
             margin: 0;
-            padding: 40px;
+            padding: 0;
+            color: var(--text-dark);
+        }
+
+        .dashboard-wrapper {
+            max-width: 900px;
+            margin: 60px auto;
+            padding: 0 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
         }
 
         h1 {
-            color: #6c5ce7;
-            /* bright purple */
+            color: var(--primary);
+            font-size: 2.2rem;
+            margin-bottom: 10px;
         }
 
-        p {
-            color: #555;
-            margin-bottom: 20px;
+        .welcome-text {
+            color: var(--text-muted);
+            font-size: 1.1rem;
         }
 
+        /* Flash Messages */
         .message {
-            color: green;
-            font-weight: bold;
+            background-color: #d1f7ed;
+            color: #008767;
+            padding: 12px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 30px;
+            font-weight: 600;
         }
 
-        a {
-            display: inline-block;
-            margin: 10px;
-            padding: 10px 18px;
+        /* Action Grid */
+        .action-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .action-card {
+            background: var(--white);
+            padding: 30px;
+            border-radius: 20px;
             text-decoration: none;
-            background-color: #fd79a8;
-            /* vibrant pink */
-            color: white;
-            border-radius: 6px;
-            font-weight: bold;
-            transition: background-color 0.3s ease;
+            color: inherit;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+            text-align: center;
+            border: 2px solid transparent;
         }
 
-        a:hover {
-            background-color: #ffeaa7;
-            /* golden yellow hover */
-            color: #333;
+        .action-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--primary-soft);
+            box-shadow: 0 15px 30px rgba(108, 92, 231, 0.1);
+        }
+
+        .icon {
+            font-size: 2.5rem;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        .action-card h3 {
+            margin: 10px 0;
+            color: var(--primary);
+        }
+
+        .action-card p {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin: 0;
+        }
+
+        /* Logout Style */
+        .logout-container {
+            margin-top: 40px;
+            text-align: center;
+        }
+
+        .btn-logout {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.9rem;
+            padding: 8px 20px;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn-logout:hover {
+            color: #d63031;
+            background: #fff0f0;
         }
     </style>
 </head>
-
 <body>
 
-    <h1>Organizer Dashboard</h1>
+    <div class="dashboard-wrapper">
+        <header>
+            <h1>Organizer Dashboard</h1>
+            <p class="welcome-text">Manage your events and track registrations in one place.</p>
+        </header>
 
-    {% with messages = get_flashed_messages() %}
-    {% if messages %}
-    {% for message in messages %}
-    <p class="message">{{ message }}</p>
-    {% endfor %}
-    {% endif %}
-    {% endwith %}
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="message">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
 
-    <p>Welcome Organizer! Here you can create and manage events with ease.</p>
+        <div class="action-grid">
+            <a href="/create_event" class="action-card">
+                <span class="icon">✨</span>
+                <h3>Create Event</h3>
+                <p>Launch a new community or college event.</p>
+            </a>
 
-    <div>
-        <a href="/create_event">Create Event</a>
-        <a href="/events">View Events</a>
-        <a href="/logout">Logout</a>
+            <a href="/events" class="action-card">
+                <span class="icon">📅</span>
+                <h3>My Events</h3>
+                <p>View and manage the events you've hosted.</p>
+            </a>
+
+            <a href="/profile" class="action-card">
+                <span class="icon">👤</span>
+                <h3>Profile</h3>
+                <p>Update your organizer details and settings.</p>
+            </a>
+        </div>
+
+        <div class="logout-container">
+            <a href="/logout" class="btn-logout">Sign Out</a>
+        </div>
     </div>
 
 </body>
-
 </html>

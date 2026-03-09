@@ -1,15 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create Event - EventEase</title>
+    <title>Edit Event - EventEase</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary: #6c5ce7;
             --primary-hover: #5a4bcf;
-            --secondary: #fd79a8;
             --bg-body: #f8f9fa;
             --text-dark: #2d3436;
             --border: #dfe6e9;
@@ -48,7 +48,9 @@
             font-size: 0.9rem;
         }
 
-        .back-link:hover { text-decoration: underline; }
+        .back-link:hover {
+            text-decoration: underline;
+        }
 
         form {
             background: var(--white);
@@ -57,31 +59,32 @@
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
         }
 
-        /* Form Sections */
         .form-section {
             margin-bottom: 30px;
             padding-bottom: 20px;
             border-bottom: 1px solid var(--border);
         }
 
-        .form-section:last-of-type { border-bottom: none; }
+        .form-section:last-of-type {
+            border-bottom: none;
+        }
 
         .form-section h3 {
             font-size: 1.1rem;
-            color: var(--text-dark);
             margin-bottom: 20px;
             text-transform: uppercase;
             letter-spacing: 1px;
         }
 
-        /* Grid for two-column layout */
         .form-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 20px;
         }
 
-        .full-width { grid-column: span 2; }
+        .full-width {
+            grid-column: span 2;
+        }
 
         label {
             display: block;
@@ -90,7 +93,9 @@
             font-size: 0.9rem;
         }
 
-        input, textarea, select {
+        input,
+        textarea,
+        select {
             width: 100%;
             padding: 12px;
             border: 1px solid var(--border);
@@ -101,12 +106,25 @@
             transition: border-color 0.2s;
         }
 
-        input:focus, textarea:focus {
+        input:focus,
+        textarea:focus {
             outline: none;
             border-color: var(--primary);
         }
 
-        textarea { resize: vertical; min-height: 80px; }
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        .current-flyer {
+            margin: 10px 0;
+        }
+
+        .current-flyer img {
+            max-width: 200px;
+            border-radius: 8px;
+        }
 
         .btn-submit {
             width: 100%;
@@ -127,48 +145,62 @@
             box-shadow: 0 5px 15px rgba(108, 92, 231, 0.3);
         }
 
+        .message {
+            background: #d1f7ed;
+            color: #008767;
+            padding: 12px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
         @media (max-width: 600px) {
-            .form-grid { grid-template-columns: 1fr; }
-            .full-width { grid-column: span 1; }
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .full-width {
+                grid-column: span 1;
+            }
         }
     </style>
 </head>
-<body>
 
+<body>
     <div class="container">
         <header>
-            <h1>Create New Event</h1>
-            <a href="/admin" class="back-link">← Back to Dashboard</a>
+            <h1>Edit Event</h1>
+            <a href="/event/{{ event[0] }}" class="back-link">← Back to Event</a>
         </header>
 
         {% with messages = get_flashed_messages() %}
-            {% if messages %}
-                {% for message in messages %}
-                    <p style="color: green; text-align: center; font-weight: bold;">{{ message }}</p>
-                {% endfor %}
-            {% endif %}
+        {% if messages %}
+        {% for message in messages %}
+        <p class="message">{{ message }}</p>
+        {% endfor %}
+        {% endif %}
         {% endwith %}
 
-        <form action="/create_event" method="POST" enctype="multipart/form-data">
-            
+        <form action="/edit_event/{{ event[0] }}" method="POST" enctype="multipart/form-data">
             <div class="form-section">
                 <h3>Basic Information</h3>
                 <div class="form-grid">
                     <div class="full-width">
                         <label for="title">Event Title</label>
-                        <input type="text" id="title" name="title" placeholder="e.g. Summer Music Fest" required>
+                        <input type="text" id="title" name="title" value="{{ event[1] }}" required>
                     </div>
                     <div class="full-width">
                         <label for="description">Description</label>
-                        <textarea id="description" name="description" placeholder="Describe your event..."></textarea>
+                        <textarea id="description" name="description">{{ event[2] or '' }}</textarea>
                     </div>
                     <div>
                         <label for="category">Category</label>
-                        <input type="text" id="category" name="category" placeholder="e.g. Workshop">
+                        <input type="text" id="category" name="category" value="{{ event[4] or '' }}">
                     </div>
                     <div>
-                        <label for="price">Price ($)</label>
-                        <input type="number" id="price" name="price" placeholder="0 for free">
+                        <label for="price">Price (₹)</label>
+                        <input type="number" id="price" name="price" value="{{ event[5] or 0 }}" step="0.01">
                     </div>
                 </div>
             </div>
@@ -178,23 +210,23 @@
                 <div class="form-grid">
                     <div>
                         <label for="event_date">Date</label>
-                        <input type="date" id="event_date" name="event_date">
+                        <input type="date" id="event_date" name="event_date" value="{{ event[6] or '' }}">
                     </div>
                     <div>
                         <label for="event_time">Time</label>
-                        <input type="time" id="event_time" name="event_time">
+                        <input type="time" id="event_time" name="event_time" value="{{ event[7] or '' }}">
                     </div>
                     <div class="full-width">
-                        <label for="venue">Venue Name</label>
-                        <input type="text" id="venue" name="venue" placeholder="e.g. Grand Plaza">
+                        <label for="venue">Venue</label>
+                        <input type="text" id="venue" name="venue" value="{{ event[8] or '' }}">
                     </div>
                     <div class="full-width">
-                        <label for="address">Full Address</label>
-                        <textarea id="address" name="address" rows="2"></textarea>
+                        <label for="address">Address</label>
+                        <textarea id="address" name="address">{{ event[9] or '' }}</textarea>
                     </div>
                     <div class="full-width">
                         <label for="gmap_link">Google Maps URL</label>
-                        <input type="text" id="gmap_link" name="gmap_link" placeholder="https://goo.gl/maps/...">
+                        <input type="text" id="gmap_link" name="gmap_link" value="{{ event[10] or '' }}">
                     </div>
                 </div>
             </div>
@@ -204,22 +236,30 @@
                 <div class="form-grid">
                     <div>
                         <label for="max_participants">Max Participants</label>
-                        <input type="number" id="max_participants" name="max_participants">
+                        <input type="number" id="max_participants" name="max_participants"
+                            value="{{ event[11] or 100 }}">
                     </div>
                     <div>
                         <label for="registration_deadline">Registration Deadline</label>
-                        <input type="date" id="registration_deadline" name="registration_deadline">
+                        <input type="date" id="registration_deadline" name="registration_deadline"
+                            value="{{ event[12] or '' }}">
                     </div>
                     <div class="full-width">
-                        <label for="flyer_image">Flyer Image</label>
+                        {% if event[3] %}
+                        <div class="current-flyer">
+                            <label>Current Flyer:</label>
+                            <img src="/uploads/{{ event[3] }}" alt="Current flyer">
+                        </div>
+                        {% endif %}
+                        <label for="flyer_image">Upload New Flyer (optional)</label>
                         <input type="file" id="flyer_image" name="flyer_image" accept="image/*">
                     </div>
                 </div>
             </div>
 
-            <button type="submit" class="btn-submit">Launch Event</button>
+            <button type="submit" class="btn-submit">Save Changes</button>
         </form>
     </div>
-
 </body>
+
 </html>

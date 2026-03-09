@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ event[1] }} - EventEase</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6c5ce7;
+            --secondary: #fd79a8;
+            --bg: #f4f7f6;
+            --white: #ffffff;
+            --text-dark: #2d3436;
+            --text-muted: #636e72;
+            --success: #00b894;
+            --danger: #d63031;
+        }
+
+        body {
+            background-color: var(--bg);
+            font-family: 'Inter', sans-serif;
+            margin: 0;
+            padding: 30px 20px;
+            color: var(--text-dark);
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .back-link {
+            display: inline-block;
+            text-decoration: none;
+            color: var(--primary);
+            font-weight: 600;
+            margin-bottom: 20px;
+            padding: 8px 20px;
+            border: 2px solid var(--primary);
+            border-radius: 50px;
+            transition: all 0.3s;
+        }
+
+        .back-link:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .event-hero {
+            background: var(--white);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+        }
+
+        .event-hero img {
+            width: 100%;
+            max-height: 400px;
+            object-fit: cover;
+        }
+
+        .event-body {
+            padding: 35px;
+        }
+
+        .category-badge {
+            display: inline-block;
+            background: #e0dbff;
+            color: var(--primary);
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 5px 14px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            margin-bottom: 12px;
+        }
+
+        .event-body h1 {
+            font-size: 2rem;
+            margin: 0 0 15px 0;
+            line-height: 1.2;
+        }
+
+        .event-body .description {
+            color: var(--text-muted);
+            line-height: 1.7;
+            margin-bottom: 25px;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .info-item {
+            background: #f8f9fa;
+            padding: 14px 18px;
+            border-radius: 12px;
+        }
+
+        .info-item .label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .info-item .value {
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        /* Capacity bar */
+        .capacity-section {
+            margin-bottom: 25px;
+        }
+
+        .capacity-label {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .capacity-bar {
+            background: #eee;
+            border-radius: 10px;
+            height: 12px;
+            overflow: hidden;
+        }
+
+        .capacity-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+
+        /* Action buttons */
+        .actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 28px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+            display: inline-block;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5a4bcf;
+            transform: translateY(-2px);
+        }
+
+        .btn-outline {
+            border: 2px solid #dfe6e9;
+            color: var(--text-muted);
+            background: transparent;
+        }
+
+        .btn-outline:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .message {
+            background: #d1f7ed;
+            color: #008767;
+            padding: 12px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        @media (max-width: 600px) {
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .actions {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        {% for message in messages %}
+        <div class="message">{{ message }}</div>
+        {% endfor %}
+        {% endif %}
+        {% endwith %}
+
+        <a href="/events" class="back-link">← Back to Events</a>
+
+        <div class="event-hero">
+            {% if event[3] %}
+            <img src="/uploads/{{ event[3] }}" alt="{{ event[1] }}">
+            {% endif %}
+
+            <div class="event-body">
+                {% if event[4] %}
+                <span class="category-badge">{{ event[4] }}</span>
+                {% endif %}
+
+                <h1>{{ event[1] }}</h1>
+
+                {% if event[2] %}
+                <p class="description">{{ event[2] }}</p>
+                {% endif %}
+
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="label">📅 Date</div>
+                        <div class="value">{{ event[6] if event[6] else 'TBA' }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="label">🕐 Time</div>
+                        <div class="value">{{ event[7] if event[7] else 'TBA' }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="label">📍 Venue</div>
+                        <div class="value">{{ event[8] if event[8] else 'TBA' }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="label">💰 Price</div>
+                        <div class="value">{% if event[5] and event[5] > 0 %}₹{{ event[5] }}{% else %}Free{% endif %}
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <div class="label">👤 Organizer</div>
+                        <div class="value">{{ organizer_name }}</div>
+                    </div>
+                    {% if event[12] %}
+                    <div class="info-item">
+                        <div class="label">⏰ Deadline</div>
+                        <div class="value">{{ event[12] }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <div class="capacity-section">
+                    <div class="capacity-label">👥 {{ reg_count }} / {{ event[11] }} spots filled</div>
+                    <div class="capacity-bar">
+                        <div class="capacity-fill"
+                            style="width: {{ (reg_count / event[11] * 100) if event[11] and event[11] > 0 else 0 }}%;">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="actions">
+                    {% if session.get('loggedin') %}
+                    {% if is_registered %}
+                    <span class="btn btn-success" style="cursor: default;">✓ Registered</span>
+                    <form action="/unregister_event/{{ event[0] }}" method="POST" style="display:inline;">
+                        <button type="submit" class="btn btn-outline">Cancel Registration</button>
+                    </form>
+                    {% else %}
+                    <a href="/register_event/{{ event[0] }}" class="btn btn-primary">Register Now</a>
+                    {% endif %}
+
+                    {% if event[13] == session.get('id') or session.get('role') == 'admin' %}
+                    <a href="/edit_event/{{ event[0] }}" class="btn btn-outline">✏️ Edit</a>
+                    <form action="/delete_event/{{ event[0] }}" method="POST" style="display:inline;"
+                        onsubmit="return confirm('Are you sure you want to delete this event?');">
+                        <button type="submit" class="btn btn-danger">🗑️ Delete</button>
+                    </form>
+                    {% endif %}
+                    {% else %}
+                    <a href="/login" class="btn btn-primary">Login to Register</a>
+                    {% endif %}
+
+                    {% if event[10] %}
+                    <a href="{{ event[10] }}" target="_blank" class="btn btn-outline">📍 View on Map</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>

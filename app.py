@@ -1,10 +1,14 @@
-from flask import Flask, render_template, request, send_from_directory, session, redirect, url_for, flash
+from flask import Flask, render_template, request, send_from_directory, session, redirect, url_for, flash, abort
 from flask_mysqldb import MySQL
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
+from functools import wraps
+from datetime import datetime, date
 import MySQLdb
 import os
+import uuid
+import re
 
 # Load environment variables from .env file
 load_dotenv()
@@ -21,6 +25,57 @@ app.config['MYSQL_DB'] = os.getenv('MYSQL_DB', 'eventease')
 app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'fallback-dev-key')
 
 mysql = MySQL(app)
+
+# Allowed file extensions for uploads
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+
+def allowed_file(filename):
+    """Check if uploaded file has an allowed image extension."""
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+# -----------------------------
+# AUTH DECORATORS
+# -----------------------------
+def login_required(f):
+    """Decorator — redirects to login if not authenticated."""
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if 'loggedin' not in session:
+            flash("Please login to access this page.")
+            return redirect(url_for('login_page'))
+        return f(*args, **kwargs)
+    return decorated
+
+def role_required(*roles):
+    """Decorator — restricts route to specific user roles."""
+    def decorator(f):
+        @wraps(f)
+        def decorated(*args, **kwargs):
+            if 'loggedin' not in session:
+                flash("Please login to access this page.")
+                return redirect(url_for('login_page'))
+            if session.get('role') not in roles:
+                flash("You do not have permission to access this page.")
+                return redirect(url_for('home'))
+            return f(*args, **kwargs)
+        return decorated
+    return decorator
+
+
+# -----------------------------
+# PASSWORD VALIDATION
+# -----------------------------
+def validate_password(password):
+    """Check password meets minimum strength requirements."""
+    errors = []
+    if len(password) < 6:
+        errors.append("Password must be at least 6 characters long.")
+    if not re.search(r'[A-Za-z]', password):
+        errors.append("Password must contain at least one letter.")
+    if not re.search(r'[0-9]', password):
+        errors.append("Password must contain at least one number.")
+    return errors
 
 
 # -----------------------------
@@ -46,7 +101,9 @@ def ensure_database_exists():
                 email VARCHAR(100) NOT NULL UNIQUE,
                 password VARCHAR(255) NOT NULL,
                 role ENUM('organizer', 'volunteer', 'participant', 'admin') NOT NULL DEFAULT 'participant',
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                INDEX idx_email (email),
+                INDEX idx_role (role)
             )
         """)
         cursor.execute("""
@@ -66,7 +123,10 @@ def ensure_database_exists():
                 registration_deadline DATE,
                 organizer_id INT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY (organizer_id) REFERENCES users(id) ON DELETE SET NULL
+                FOREIGN KEY (organizer_id) REFERENCES users(id) ON DELETE SET NULL,
+                INDEX idx_event_date (event_date),
+                INDEX idx_category (category),
+                INDEX idx_organizer (organizer_id)
             )
         """)
         cursor.execute("""
@@ -78,7 +138,9 @@ def ensure_database_exists():
                 registered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
                 FOREIGN KEY (event_id) REFERENCES events(id) ON DELETE CASCADE,
-                UNIQUE KEY unique_registration (user_id, event_id)
+                UNIQUE KEY unique_registration (user_id, event_id),
+                INDEX idx_user (user_id),
+                INDEX idx_event (event_id)
             )
         """)
 
@@ -103,6 +165,17 @@ if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
 # -----------------------------
+# ERROR HANDLERS
+# -----------------------------
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template("404.html"), 404
+
+@app.errorhandler(500)
+def internal_server_error(e):
+    return render_template("500.html"), 500
+
+# -----------------------------
 # HOME PAGE
 # -----------------------------
 @app.route("/")
@@ -121,28 +194,47 @@ def register_page():
 # -----------------------------
 @app.route("/register", methods=["POST"])
 def register():
+    name = request.form.get('name', '').strip()
+    email = request.form.get('email', '').strip()
+    password = request.form.get('password', '')
+    role = request.form.get('role', 'participant')
 
-    name = request.form['name']
-    email = request.form['email']
-    password = request.form['password']
-    role = request.form['role']
-    
+    # Input validation
+    if not name or not email or not password:
+        flash("All fields are required.")
+        return redirect(url_for('register_page'))
+
+    if role not in ('organizer', 'volunteer', 'participant'):
+        flash("Invalid role selected.")
+        return redirect(url_for('register_page'))
+
+    # Password strength check
+    pwd_errors = validate_password(password)
+    if pwd_errors:
+        for err in pwd_errors:
+            flash(err)
+        return redirect(url_for('register_page'))
+
     # Hash the password for security
     hashed_password = generate_password_hash(password)
 
-    with mysql.connection.cursor() as cursor:
-        cursor.execute("SELECT * FROM users WHERE email=%s", (email,))
-        existing_user = cursor.fetchone()
+    try:
+        with mysql.connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM users WHERE email=%s", (email,))
+            existing_user = cursor.fetchone()
 
-        if existing_user:
-            flash("Email already registered. Please login.")
-            return redirect(url_for('login_page'))
+            if existing_user:
+                flash("Email already registered. Please login.")
+                return redirect(url_for('login_page'))
 
-        cursor.execute(
-            "INSERT INTO users(name,email,password,role) VALUES(%s,%s,%s,%s)",
-            (name, email, hashed_password, role)
-        )
-        mysql.connection.commit()
+            cursor.execute(
+                "INSERT INTO users(name,email,password,role) VALUES(%s,%s,%s,%s)",
+                (name, email, hashed_password, role)
+            )
+            mysql.connection.commit()
+    except Exception:
+        flash("An error occurred during registration. Please try again.")
+        return redirect(url_for('register_page'))
 
     flash("User Registered Successfully! Please login.")
     return redirect(url_for('login_page'))
@@ -159,17 +251,23 @@ def login_page():
 # -----------------------------
 @app.route("/login", methods=["POST"])
 def login():
+    email = request.form.get('email', '').strip()
+    password = request.form.get('password', '')
 
-    email = request.form['email']
-    password = request.form['password']
+    if not email or not password:
+        flash("Please fill in all fields.")
+        return redirect(url_for('login_page'))
 
-    with mysql.connection.cursor() as cursor:
-        cursor.execute("SELECT id, name, email, password, role FROM users WHERE email=%s", (email,))
-        user = cursor.fetchone()
+    try:
+        with mysql.connection.cursor() as cursor:
+            cursor.execute("SELECT id, name, email, password, role FROM users WHERE email=%s", (email,))
+            user = cursor.fetchone()
+    except Exception:
+        flash("An error occurred. Please try again.")
+        return redirect(url_for('login_page'))
 
     # Check if user exists and password hash matches
     if user and check_password_hash(user[3], password):
-        # Store user info in session
         session['loggedin'] = True
         session['id'] = user[0]
         session['name'] = user[1]
@@ -177,9 +275,8 @@ def login():
 
         role = user[4]
 
-        # Redirect based on role
         if role == "organizer":
-            return redirect(url_for("organizer_dashboard")) # Assuming you'll create these routes
+            return redirect(url_for("organizer_dashboard"))
         elif role == "volunteer":
             return redirect(url_for("volunteer_dashboard"))
         elif role == "participant":
@@ -187,37 +284,144 @@ def login():
         elif role == "admin":
             return redirect(url_for("admin_dashboard"))
         else:
-            return redirect(url_for('home')) # Fallback
+            return redirect(url_for('home'))
 
     flash("Invalid email or password")
     return redirect(url_for('login_page'))
 
 # -----------------------------
-# DASHBOARD ROUTES
+# DASHBOARD ROUTES (with real data)
 # -----------------------------
 @app.route("/organizer_dashboard")
+@login_required
 def organizer_dashboard():
-    if 'loggedin' not in session:
-        return redirect(url_for('login_page'))
-    return render_template("organizer_dashboard.html")
+    try:
+        with mysql.connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM events WHERE organizer_id=%s ORDER BY event_date DESC", (session['id'],))
+            my_events = cursor.fetchall()
+
+            cursor.execute("""
+                SELECT COUNT(*) FROM registrations r
+                JOIN events e ON r.event_id = e.id
+                WHERE e.organizer_id = %s
+            """, (session['id'],))
+            total_registrations = cursor.fetchone()[0]
+
+        return render_template("organizer_dashboard.html",
+                               my_events=my_events,
+                               total_registrations=total_registrations)
+    except Exception:
+        return render_template("organizer_dashboard.html", my_events=[], total_registrations=0)
 
 @app.route("/volunteer_dashboard")
+@login_required
 def volunteer_dashboard():
-    if 'loggedin' not in session:
-        return redirect(url_for('login_page'))
-    return render_template("volunteer_dashboard.html")
+    try:
+        with mysql.connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT e.*, r.registered_at FROM registrations r
+                JOIN events e ON r.event_id = e.id
+                WHERE r.user_id = %s ORDER BY e.event_date ASC
+            """, (session['id'],))
+            my_registrations = cursor.fetchall()
+
+            cursor.execute("SELECT COUNT(*) FROM events WHERE event_date >= CURDATE()")
+            upcoming_count = cursor.fetchone()[0]
+
+        return render_template("volunteer_dashboard.html",
+                               my_registrations=my_registrations,
+                               upcoming_count=upcoming_count)
+    except Exception:
+        return render_template("volunteer_dashboard.html", my_registrations=[], upcoming_count=0)
 
 @app.route("/participant_dashboard")
+@login_required
 def participant_dashboard():
-    if 'loggedin' not in session:
-        return redirect(url_for('login_page'))
-    return render_template("participant_dashboard.html")
+    try:
+        with mysql.connection.cursor() as cursor:
+            cursor.execute("""
+                SELECT e.*, r.payment_status, r.registered_at FROM registrations r
+                JOIN events e ON r.event_id = e.id
+                WHERE r.user_id = %s ORDER BY e.event_date ASC
+            """, (session['id'],))
+            my_registrations = cursor.fetchall()
+
+        return render_template("participant_dashboard.html",
+                               my_registrations=my_registrations)
+    except Exception:
+        return render_template("participant_dashboard.html", my_registrations=[])
 
 @app.route("/admin_dashboard")
+@role_required('admin')
 def admin_dashboard():
-    if 'loggedin' not in session:
-        return redirect(url_for('login_page'))
-    return render_template("admin_dashboard.html")
+    try:
+        with mysql.connection.cursor() as cursor:
+            cursor.execute("SELECT COUNT(*) FROM users")
+            total_users = cursor.fetchone()[0]
+            cursor.execute("SELECT COUNT(*) FROM events")
+            total_events = cursor.fetchone()[0]
+            cursor.execute("SELECT COUNT(*) FROM registrations")
+            total_registrations = cursor.fetchone()[0]
+
+            cursor.execute("SELECT id, name, email, role, created_at FROM users ORDER BY created_at DESC")
+            all_users = cursor.fetchall()
+
+            cursor.execute("SELECT * FROM events ORDER BY created_at DESC")
+            all_events = cursor.fetchall()
+
+        return render_template("admin_dashboard.html",
+                               total_users=total_users,
+                               total_events=total_events,
+                               total_registrations=total_registrations,
+                               all_users=all_users,
+                               all_events=all_events)
+    except Exception:
+        return render_template("admin_dashboard.html",
+                               total_users=0, total_events=0, total_registrations=0,
+                               all_users=[], all_events=[])
+
+# -----------------------------
+# PROFILE PAGE
+# -----------------------------
+@app.route("/profile")
+@login_required
+def profile():
+    try:
+        with mysql.connection.cursor() as cursor:
+            cursor.execute("SELECT id, name, email, role, created_at FROM users WHERE id=%s", (session['id'],))
+            user = cursor.fetchone()
+
+            cursor.execute("SELECT COUNT(*) FROM registrations WHERE user_id=%s", (session['id'],))
+            reg_count = cursor.fetchone()[0]
+
+            # Get events user organized (if organizer)
+            cursor.execute("SELECT COUNT(*) FROM events WHERE organizer_id=%s", (session['id'],))
+            events_organized = cursor.fetchone()[0]
+
+        return render_template("profile.html", user=user, reg_count=reg_count, events_organized=events_organized)
+    except Exception:
+        flash("Could not load profile.")
+        return redirect(url_for('home'))
+
+@app.route("/profile/update", methods=["POST"])
+@login_required
+def update_profile():
+    name = request.form.get('name', '').strip()
+
+    if not name:
+        flash("Name cannot be empty.")
+        return redirect(url_for('profile'))
+
+    try:
+        with mysql.connection.cursor() as cursor:
+            cursor.execute("UPDATE users SET name=%s WHERE id=%s", (name, session['id']))
+            mysql.connection.commit()
+            session['name'] = name
+        flash("Profile updated successfully!")
+    except Exception:
+        flash("Could not update profile. Please try again.")
+
+    return redirect(url_for('profile'))
 
 # -----------------------------
 # LOGOUT
@@ -232,100 +436,364 @@ def logout():
 # CREATE EVENT PAGE
 # -----------------------------
 @app.route("/create_event")
+@login_required
 def create_event_page():
-    if 'loggedin' not in session:
-        flash("Please login to create an event.")
-        return redirect(url_for('login_page'))
     return render_template("create_event.html")
 
 # -----------------------------
-# CREATE EVENT
+# CREATE EVENT (POST)
 # -----------------------------
 @app.route("/create_event", methods=["POST"])
+@login_required
 def create_event():
+    title = request.form.get("title", "").strip()
+    description = request.form.get("description", "").strip()
+    category = request.form.get("category", "").strip()
+    price = request.form.get("price", "0")
+    event_date = request.form.get("event_date", "")
+    event_time = request.form.get("event_time", "")
+    venue = request.form.get("venue", "").strip()
+    address = request.form.get("address", "").strip()
+    gmap_link = request.form.get("gmap_link", "").strip()
+    max_participants = request.form.get("max_participants", "100")
+    registration_deadline = request.form.get("registration_deadline", "")
 
-    title = request.form["title"]
-    description = request.form["description"]
-    category = request.form["category"]
-    price = request.form["price"]
-    event_date = request.form["event_date"]
-    event_time = request.form["event_time"]
-    venue = request.form["venue"]
-    address = request.form["address"]
-    gmap_link = request.form["gmap_link"]
-    max_participants = request.form["max_participants"]
-    registration_deadline = request.form["registration_deadline"]
+    # Server-side validation
+    if not title:
+        flash("Event title is required.")
+        return redirect(url_for('create_event_page'))
+
+    if event_date:
+        try:
+            ed = datetime.strptime(event_date, "%Y-%m-%d").date()
+            if ed < date.today():
+                flash("Event date cannot be in the past.")
+                return redirect(url_for('create_event_page'))
+        except ValueError:
+            flash("Invalid event date format.")
+            return redirect(url_for('create_event_page'))
+
+    if registration_deadline and event_date:
+        try:
+            rd = datetime.strptime(registration_deadline, "%Y-%m-%d").date()
+            ed = datetime.strptime(event_date, "%Y-%m-%d").date()
+            if rd > ed:
+                flash("Registration deadline cannot be after the event date.")
+                return redirect(url_for('create_event_page'))
+        except ValueError:
+            pass
 
     flyer = request.files.get("flyer_image")
-
     filename = ""
 
     if flyer and flyer.filename != "":
-        filename = secure_filename(flyer.filename)
+        if not allowed_file(flyer.filename):
+            flash("Only image files (png, jpg, jpeg, gif, webp) are allowed.")
+            return redirect(url_for('create_event_page'))
+        original_name = secure_filename(flyer.filename)
+        filename = f"{uuid.uuid4().hex}_{original_name}"
         filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
         flyer.save(filepath)
 
-    with mysql.connection.cursor() as cursor:
-        cursor.execute(
-            """INSERT INTO events
-            (title, description, flyer_image, category, price,
-            event_date, event_time, venue, address,
-            gmap_link, max_participants, registration_deadline, organizer_id)
-            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
-            (
-                title, description, filename, category, price,
+    try:
+        with mysql.connection.cursor() as cursor:
+            cursor.execute(
+                """INSERT INTO events
+                (title, description, flyer_image, category, price,
                 event_date, event_time, venue, address,
-                gmap_link, max_participants, registration_deadline,
-                session.get('id')
+                gmap_link, max_participants, registration_deadline, organizer_id)
+                VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+                (
+                    title, description, filename, category, price,
+                    event_date or None, event_time or None, venue, address,
+                    gmap_link, max_participants, registration_deadline or None,
+                    session.get('id')
+                )
             )
-        )
-        mysql.connection.commit()
+            mysql.connection.commit()
+    except Exception:
+        flash("An error occurred while creating the event. Please try again.")
+        return redirect(url_for('create_event_page'))
 
     flash("Event Created Successfully!")
     return redirect(url_for('events'))
 
 # -----------------------------
-# SHOW EVENTS PAGE
+# EVENTS PAGE (with search & filter)
 # -----------------------------
 @app.route("/events")
 def events():
+    search = request.args.get('search', '').strip()
+    category_filter = request.args.get('category', '').strip()
+    page = request.args.get('page', 1, type=int)
+    per_page = 9
 
-    with mysql.connection.cursor() as cursor:
-        cursor.execute("SELECT * FROM events")
-        events = cursor.fetchall()
+    try:
+        with mysql.connection.cursor() as cursor:
+            query = "SELECT * FROM events WHERE 1=1"
+            params = []
 
-    return render_template("events.html", events=events)
+            if search:
+                query += " AND (title LIKE %s OR description LIKE %s OR venue LIKE %s)"
+                like = f"%{search}%"
+                params.extend([like, like, like])
+
+            if category_filter:
+                query += " AND category = %s"
+                params.append(category_filter)
+
+            # Total count for pagination
+            count_query = query.replace("SELECT *", "SELECT COUNT(*)", 1)
+            cursor.execute(count_query, params)
+            total = cursor.fetchone()[0]
+            total_pages = max(1, (total + per_page - 1) // per_page)
+
+            query += " ORDER BY event_date DESC LIMIT %s OFFSET %s"
+            params.extend([per_page, (page - 1) * per_page])
+
+            cursor.execute(query, params)
+            events_list = cursor.fetchall()
+
+            # Categories for filter dropdown
+            cursor.execute("SELECT DISTINCT category FROM events WHERE category IS NOT NULL AND category != '' ORDER BY category")
+            categories = [row[0] for row in cursor.fetchall()]
+
+        return render_template("events.html", events=events_list, categories=categories,
+                               search=search, category_filter=category_filter,
+                               page=page, total_pages=total_pages)
+    except Exception:
+        return render_template("events.html", events=[], categories=[],
+                               search='', category_filter='', page=1, total_pages=1)
+
+# -----------------------------
+# EVENT DETAIL PAGE
+# -----------------------------
+@app.route("/event/<int:event_id>")
+def event_detail(event_id):
+    try:
+        with mysql.connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM events WHERE id=%s", (event_id,))
+            event = cursor.fetchone()
+
+            if not event:
+                abort(404)
+
+            # Organizer name
+            cursor.execute("SELECT name FROM users WHERE id=%s", (event[13],))
+            organizer = cursor.fetchone()
+            organizer_name = organizer[0] if organizer else "Unknown"
+
+            # Registration count
+            cursor.execute("SELECT COUNT(*) FROM registrations WHERE event_id=%s", (event_id,))
+            reg_count = cursor.fetchone()[0]
+
+            # Check if current user is registered
+            is_registered = False
+            if 'loggedin' in session:
+                cursor.execute("SELECT * FROM registrations WHERE user_id=%s AND event_id=%s",
+                               (session['id'], event_id))
+                is_registered = cursor.fetchone() is not None
+
+        return render_template("event_detail.html", event=event,
+                               organizer_name=organizer_name,
+                               reg_count=reg_count,
+                               is_registered=is_registered)
+    except Exception:
+        abort(404)
+
+# -----------------------------
+# EDIT EVENT
+# -----------------------------
+@app.route("/edit_event/<int:event_id>")
+@login_required
+def edit_event_page(event_id):
+    try:
+        with mysql.connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM events WHERE id=%s", (event_id,))
+            event = cursor.fetchone()
+
+            if not event:
+                abort(404)
+
+            if event[13] != session['id'] and session.get('role') != 'admin':
+                flash("You do not have permission to edit this event.")
+                return redirect(url_for('events'))
+
+        return render_template("edit_event.html", event=event)
+    except Exception:
+        abort(404)
+
+@app.route("/edit_event/<int:event_id>", methods=["POST"])
+@login_required
+def edit_event(event_id):
+    try:
+        with mysql.connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM events WHERE id=%s", (event_id,))
+            event = cursor.fetchone()
+
+            if not event:
+                abort(404)
+
+            if event[13] != session['id'] and session.get('role') != 'admin':
+                flash("You do not have permission to edit this event.")
+                return redirect(url_for('events'))
+
+            title = request.form.get("title", "").strip()
+            description = request.form.get("description", "").strip()
+            category = request.form.get("category", "").strip()
+            price = request.form.get("price", "0")
+            event_date = request.form.get("event_date", "")
+            event_time = request.form.get("event_time", "")
+            venue = request.form.get("venue", "").strip()
+            address = request.form.get("address", "").strip()
+            gmap_link = request.form.get("gmap_link", "").strip()
+            max_participants = request.form.get("max_participants", "100")
+            registration_deadline = request.form.get("registration_deadline", "")
+
+            if not title:
+                flash("Event title is required.")
+                return redirect(url_for('edit_event_page', event_id=event_id))
+
+            flyer = request.files.get("flyer_image")
+            filename = event[3]  # Keep existing
+
+            if flyer and flyer.filename != "":
+                if not allowed_file(flyer.filename):
+                    flash("Only image files are allowed.")
+                    return redirect(url_for('edit_event_page', event_id=event_id))
+                original_name = secure_filename(flyer.filename)
+                filename = f"{uuid.uuid4().hex}_{original_name}"
+                filepath = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+                flyer.save(filepath)
+
+            cursor.execute(
+                """UPDATE events SET title=%s, description=%s, flyer_image=%s, category=%s,
+                price=%s, event_date=%s, event_time=%s, venue=%s, address=%s,
+                gmap_link=%s, max_participants=%s, registration_deadline=%s
+                WHERE id=%s""",
+                (title, description, filename, category, price,
+                 event_date or None, event_time or None, venue, address,
+                 gmap_link, max_participants, registration_deadline or None,
+                 event_id)
+            )
+            mysql.connection.commit()
+
+        flash("Event updated successfully!")
+        return redirect(url_for('event_detail', event_id=event_id))
+    except Exception:
+        flash("An error occurred while updating the event.")
+        return redirect(url_for('edit_event_page', event_id=event_id))
+
+# -----------------------------
+# DELETE EVENT
+# -----------------------------
+@app.route("/delete_event/<int:event_id>", methods=["POST"])
+@login_required
+def delete_event(event_id):
+    try:
+        with mysql.connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM events WHERE id=%s", (event_id,))
+            event = cursor.fetchone()
+
+            if not event:
+                abort(404)
+
+            if event[13] != session['id'] and session.get('role') != 'admin':
+                flash("You do not have permission to delete this event.")
+                return redirect(url_for('events'))
+
+            if event[3]:
+                filepath = os.path.join(app.config["UPLOAD_FOLDER"], event[3])
+                if os.path.exists(filepath):
+                    os.remove(filepath)
+
+            cursor.execute("DELETE FROM events WHERE id=%s", (event_id,))
+            mysql.connection.commit()
+
+        flash("Event deleted successfully!")
+    except Exception:
+        flash("An error occurred while deleting the event.")
+
+    return redirect(url_for('events'))
 
 # -----------------------------
 # REGISTER FOR EVENT
 # -----------------------------
 @app.route("/register_event/<int:event_id>")
 def register_event(event_id):
-
-    # Check if user is logged in
     if 'loggedin' in session:
         user_id = session['id']
 
-        with mysql.connection.cursor() as cursor:
-            # Check if already registered
-            cursor.execute("SELECT * FROM registrations WHERE user_id = %s AND event_id = %s", (user_id, event_id))
-            registration = cursor.fetchone()
-            if registration:
-                flash("You are already registered for this event.")
-                return redirect(url_for('events'))
+        try:
+            with mysql.connection.cursor() as cursor:
+                # Capacity check
+                cursor.execute("SELECT max_participants FROM events WHERE id=%s", (event_id,))
+                event = cursor.fetchone()
+                if not event:
+                    flash("Event not found.")
+                    return redirect(url_for('events'))
 
-            # Register the user
-            cursor.execute(
-                "INSERT INTO registrations(user_id,event_id,payment_status) VALUES(%s,%s,%s)",
-                (user_id, event_id, "pending")
-            )
-            mysql.connection.commit()
+                cursor.execute("SELECT COUNT(*) FROM registrations WHERE event_id=%s", (event_id,))
+                current_count = cursor.fetchone()[0]
+                if current_count >= event[0]:
+                    flash("Sorry, this event is full.")
+                    return redirect(url_for('events'))
+
+                # Duplicate check
+                cursor.execute("SELECT * FROM registrations WHERE user_id=%s AND event_id=%s", (user_id, event_id))
+                if cursor.fetchone():
+                    flash("You are already registered for this event.")
+                    return redirect(url_for('events'))
+
+                cursor.execute(
+                    "INSERT INTO registrations(user_id,event_id,payment_status) VALUES(%s,%s,%s)",
+                    (user_id, event_id, "pending")
+                )
+                mysql.connection.commit()
+        except Exception:
+            flash("An error occurred during registration.")
+            return redirect(url_for('events'))
 
         flash("You have successfully registered for the event!")
         return redirect(url_for('events'))
 
     flash("You need to be logged in to register for an event.")
     return redirect(url_for('login_page'))
+
+# -----------------------------
+# UNREGISTER FROM EVENT
+# -----------------------------
+@app.route("/unregister_event/<int:event_id>", methods=["POST"])
+@login_required
+def unregister_event(event_id):
+    try:
+        with mysql.connection.cursor() as cursor:
+            cursor.execute("DELETE FROM registrations WHERE user_id=%s AND event_id=%s",
+                           (session['id'], event_id))
+            mysql.connection.commit()
+        flash("You have been unregistered from the event.")
+    except Exception:
+        flash("An error occurred. Please try again.")
+    return redirect(url_for('events'))
+
+# -----------------------------
+# ADMIN: DELETE USER
+# -----------------------------
+@app.route("/admin/delete_user/<int:user_id>", methods=["POST"])
+@role_required('admin')
+def delete_user(user_id):
+    if user_id == session['id']:
+        flash("You cannot delete your own account.")
+        return redirect(url_for('admin_dashboard'))
+
+    try:
+        with mysql.connection.cursor() as cursor:
+            cursor.execute("DELETE FROM users WHERE id=%s", (user_id,))
+            mysql.connection.commit()
+        flash("User deleted successfully.")
+    except Exception:
+        flash("An error occurred while deleting the user.")
+    return redirect(url_for('admin_dashboard'))
 
 # -----------------------------
 # SERVE UPLOADED IMAGES

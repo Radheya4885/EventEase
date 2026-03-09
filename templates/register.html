@@ -1,123 +1,199 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
-    <title>Register - EventEase</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Join EventEase - Registration</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --primary: #6c5ce7;
+            --primary-hover: #5a4bcf;
+            --secondary: #fd79a8;
+            --bg-gradient: linear-gradient(135deg, #a29bfe 0%, #6c5ce7 100%);
+            --white: #ffffff;
+            --text-main: #2d3436;
+            --text-muted: #636e72;
+            --error: #ff7675;
+        }
+
         body {
-            background-color: #f9f9f9;
-            /* soft neutral background */
-            font-family: Arial, sans-serif;
-            text-align: center;
+            background: var(--bg-gradient);
+            font-family: 'Inter', sans-serif;
             margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .reg-card {
+            background: var(--white);
             padding: 40px;
+            width: 100%;
+            max-width: 450px;
+            border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            text-align: center;
         }
 
         h2 {
-            color: #6c5ce7;
-            /* bright purple */
+            color: var(--primary);
+            font-size: 2rem;
+            margin-bottom: 8px;
+            font-weight: 800;
         }
 
-        form {
-            display: inline-block;
-            background: #fff;
-            padding: 20px 30px;
+        p.subtitle {
+            color: var(--text-muted);
+            margin-bottom: 30px;
+            font-size: 0.95rem;
+        }
+
+        /* Flash Messages */
+        .message-box {
+            background-color: #fff5f5;
+            border-left: 4px solid var(--error);
+            color: var(--error);
+            padding: 12px;
             border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            margin-top: 20px;
+            margin-bottom: 20px;
+            font-size: 0.85rem;
+            text-align: left;
+        }
+
+        /* Form Grouping */
+        .form-group {
+            text-align: left;
+            margin-bottom: 18px;
         }
 
         label {
-            font-weight: bold;
-            color: #333;
+            display: block;
+            font-weight: 600;
+            color: var(--text-main);
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
-        input,
-        select {
-            width: 250px;
-            padding: 8px;
-            margin-top: 6px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
+        input, select {
+            width: 100%;
+            padding: 12px 16px;
+            border: 2px solid #edf2f7;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-family: inherit;
+            box-sizing: border-box;
+            transition: all 0.2s ease;
+            background-color: #fcfcfd;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+            background-color: var(--white);
+            box-shadow: 0 0 0 4px rgba(108, 92, 231, 0.1);
         }
 
         button {
-            margin-top: 15px;
-            padding: 10px 20px;
-            background-color: #fd79a8;
-            /* vibrant pink */
+            width: 100%;
+            padding: 15px;
+            background-color: var(--primary);
             color: white;
             border: none;
-            border-radius: 6px;
-            font-weight: bold;
+            border-radius: 12px;
+            font-size: 1.1rem;
+            font-weight: 700;
             cursor: pointer;
-            transition: background-color 0.3s ease;
+            transition: all 0.3s ease;
+            margin-top: 10px;
         }
 
         button:hover {
-            background-color: #ffeaa7;
-            /* golden yellow hover */
-            color: #333;
+            background-color: var(--primary-hover);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(108, 92, 231, 0.3);
         }
 
-        .message {
-            color: red;
-            font-weight: bold;
+        .footer-text {
+            margin-top: 25px;
+            color: var(--text-muted);
+            font-size: 0.9rem;
         }
 
-        p {
-            margin-top: 20px;
-            color: #555;
-        }
-
-        a {
-            color: #6c5ce7;
+        .footer-text a {
+            color: var(--primary);
             text-decoration: none;
-            font-weight: bold;
+            font-weight: 700;
         }
 
-        a:hover {
+        .footer-text a:hover {
             text-decoration: underline;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            font-size: 0.8rem;
+            color: #b2bec3;
+            text-decoration: none;
         }
     </style>
 </head>
 
 <body>
 
-    <h2>User Registration</h2>
+    <div class="reg-card">
+        <h2>Create Account</h2>
+        <p class="subtitle">Join the EventEase community today.</p>
 
-    {% with messages = get_flashed_messages() %}
-    {% if messages %}
-    {% for message in messages %}
-    <p class="message">{{ message }}</p>
-    {% endfor %}
-    {% endif %}
-    {% endwith %}
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+            <div class="message-box">
+                {% for message in messages %}
+                    • {{ message }}<br>
+                {% endfor %}
+            </div>
+            {% endif %}
+        {% endwith %}
 
-    <form action="/register" method="POST">
-        <label for="name">Name:</label><br>
-        <input type="text" id="name" name="name" required><br><br>
+        <form action="/register" method="POST">
+            <div class="form-group">
+                <label for="name">Full Name</label>
+                <input type="text" id="name" name="name" placeholder="John Doe" required>
+            </div>
 
-        <label for="email">Email:</label><br>
-        <input type="email" id="email" name="email" required><br><br>
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email" placeholder="john@example.com" required>
+            </div>
 
-        <label for="password">Password:</label><br>
-        <input type="password" id="password" name="password" required><br><br>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" placeholder="Min. 8 characters" required>
+            </div>
 
-        <label for="role">Role:</label><br>
-        <select id="role" name="role">
-            <option value="participant">Participant</option>
-            <option value="organizer">Organizer</option>
-            <option value="volunteer">Volunteer</option>
-        </select><br><br>
+            <div class="form-group">
+                <label for="role">I want to join as a:</label>
+                <select id="role" name="role">
+                    <option value="participant">Participant (Attend events)</option>
+                    <option value="organizer">Organizer (Host events)</option>
+                    <option value="volunteer">Volunteer (Help out)</option>
+                </select>
+            </div>
 
-        <button type="submit">Register</button>
-    </form>
+            <button type="submit">Create Account</button>
+        </form>
 
-    <p>Already have an account? <a href="/login">Login</a></p>
+        <p class="footer-text">
+            Already have an account? <a href="/login">Login</a>
+        </p>
+        
+        <a href="/" class="back-link">← Return to Home</a>
+    </div>
 
 </body>
-
 </html>
