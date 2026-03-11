@@ -290,7 +290,8 @@
                         <button type="submit" class="btn btn-outline">Cancel Registration</button>
                     </form>
                     {% else %}
-                    <a href="/register_event/{{ event.id }}" class="btn btn-primary">Register Now</a>
+                    <a href="{{ url_for('register_event_form', event_id=event.id) }}" class="btn btn-primary">Register
+                        Now</a>
                     {% endif %}
 
                     {% if event.organizer_id == session.get('id') or session.get('role') == 'admin' %}

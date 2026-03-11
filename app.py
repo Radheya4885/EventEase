@@ -4,7 +4,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
 from functools import wraps
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
+from decimal import Decimal
 import MySQLdb
 import os
 import uuid
@@ -26,6 +27,39 @@ app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'fallback-dev-key')
 app.config['MYSQL_CURSORCLASS'] = 'DictCursor'  # Return rows as dictionaries
 
 mysql = MySQL(app)
+
+# -----------------------------
+# JINJA2 CUSTOM FILTERS
+# -----------------------------
+@app.template_filter('format_date')
+def format_date_filter(value):
+    """Format date objects to YYYY-MM-DD string for HTML date inputs."""
+    if value is None:
+        return ''
+    if isinstance(value, date):
+        return value.strftime('%Y-%m-%d')
+    return str(value)
+
+@app.template_filter('format_time')
+def format_time_filter(value):
+    """Format time/timedelta objects to HH:MM string for HTML time inputs."""
+    if value is None:
+        return ''
+    if isinstance(value, timedelta):
+        total_seconds = int(value.total_seconds())
+        hours = total_seconds // 3600
+        minutes = (total_seconds % 3600) // 60
+        return f"{hours:02d}:{minutes:02d}"
+    return str(value)
+
+@app.template_filter('format_price')
+def format_price_filter(value):
+    """Format Decimal price to float for display."""
+    if value is None:
+        return 0
+    if isinstance(value, Decimal):
+        return float(value)
+    return value
 
 # Allowed file extensions for uploads
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
@@ -135,6 +169,10 @@ def ensure_database_exists():
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 user_id INT NOT NULL,
                 event_id INT NOT NULL,
+                name VARCHAR(100),
+                phone VARCHAR(20),
+                college VARCHAR(150),
+                notes TEXT,
                 payment_status VARCHAR(50) DEFAULT 'pending',
                 registered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
@@ -549,7 +587,8 @@ def events():
             total_pages = max(1, (total + per_page - 1) // per_page)
 
             query += " ORDER BY event_date DESC LIMIT %s OFFSET %s"
-            params.extend([per_page, (page - 1) * per_page])
+            params.append(per_page)
+            params.append((page - 1) * per_page)
 
             cursor.execute(query, params)
             events_list = cursor.fetchall()
@@ -703,46 +742,14 @@ def delete_event(event_id):
     return redirect(url_for('events'))
 
 # -----------------------------
-# REGISTER FOR EVENT
+# REGISTER FOR EVENT (redirects to form)
 # -----------------------------
 @app.route("/register_event/<int:event_id>")
 def register_event(event_id):
-    if 'loggedin' in session:
-        user_id = session['id']
-        try:
-            with mysql.connection.cursor() as cursor:
-                cursor.execute("SELECT max_participants FROM events WHERE id=%s", (event_id,))
-                event = cursor.fetchone()
-                if not event:
-                    flash("Event not found.")
-                    return redirect(url_for('events'))
-
-                cursor.execute("SELECT COUNT(*) AS total FROM registrations WHERE event_id=%s", (event_id,))
-                current_count = cursor.fetchone()['total']
-                if current_count >= event['max_participants']:
-                    flash("Sorry, this event is full.")
-                    return redirect(url_for('events'))
-
-                cursor.execute("SELECT id FROM registrations WHERE user_id=%s AND event_id=%s",
-                               (user_id, event_id))
-                if cursor.fetchone():
-                    flash("You are already registered for this event.")
-                    return redirect(url_for('events'))
-
-                cursor.execute(
-                    "INSERT INTO registrations(user_id, event_id, payment_status) VALUES(%s, %s, %s)",
-                    (user_id, event_id, "pending")
-                )
-                mysql.connection.commit()
-        except Exception:
-            flash("An error occurred during registration.")
-            return redirect(url_for('events'))
-
-        flash("You have successfully registered for the event!")
-        return redirect(url_for('events'))
-
-    flash("You need to be logged in to register for an event.")
-    return redirect(url_for('login_page'))
+    if 'loggedin' not in session:
+        flash("You need to be logged in to register for an event.")
+        return redirect(url_for('login_page'))
+    return redirect(url_for('register_event_form', event_id=event_id))
 
 # -----------------------------
 # UNREGISTER FROM EVENT
@@ -784,6 +791,84 @@ def delete_user(user_id):
 @app.route('/uploads/<filename>')
 def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
+
+@app.route("/register_event_form/<int:event_id>")
+@login_required
+def register_event_form(event_id):
+
+    try:
+        with mysql.connection.cursor() as cursor:
+
+            # get event info
+            cursor.execute("SELECT * FROM events WHERE id=%s", (event_id,))
+            event = cursor.fetchone()
+
+            if not event:
+                abort(404)
+
+        return render_template(
+            "register_event.html",
+            event=event
+        )
+
+    except Exception:
+        abort(404)
+
+@app.route("/register_event_submit/<int:event_id>", methods=["POST"])
+@login_required
+def register_event_submit(event_id):
+
+    name = request.form.get("name")
+    phone = request.form.get("phone")
+    college = request.form.get("college")
+    notes = request.form.get("notes")
+
+    try:
+        with mysql.connection.cursor() as cursor:
+
+            # check if event exists
+            cursor.execute("SELECT max_participants FROM events WHERE id=%s", (event_id,))
+            event = cursor.fetchone()
+
+            if not event:
+                flash("Event not found.")
+                return redirect(url_for("events"))
+
+            # check capacity
+            cursor.execute("SELECT COUNT(*) AS total FROM registrations WHERE event_id=%s", (event_id,))
+            current_count = cursor.fetchone()['total']
+
+            if current_count >= event['max_participants']:
+                flash("Sorry, this event is full.")
+                return redirect(url_for("events"))
+
+            # prevent duplicate registration
+            cursor.execute(
+                "SELECT id FROM registrations WHERE user_id=%s AND event_id=%s",
+                (session['id'], event_id)
+            )
+
+            if cursor.fetchone():
+                flash("You are already registered for this event.")
+                return redirect(url_for("events"))
+
+            # insert registration
+            cursor.execute(
+                """INSERT INTO registrations 
+                (user_id, event_id, name, phone, college, notes, payment_status) 
+                VALUES (%s,%s,%s,%s,%s,%s,%s)""",
+                (session['id'], event_id, name, phone, college, notes, "pending")
+            )
+
+            mysql.connection.commit()
+
+        flash("Registration successful!")
+
+    except Exception:
+        flash("An error occurred during registration.")
+
+    return redirect(url_for("participant_dashboard")) 
 
 # -----------------------------
 # RUN SERVER

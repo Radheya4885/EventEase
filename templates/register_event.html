@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Register - {{ event.title }}</title>
+</head>
+
+<body>
+
+    <h2>Register for {{ event.title }}</h2>
+
+    <form method="POST" action="/register_event_submit/{{ event.id }}">
+
+        <label>Full Name</label>
+        <input type="text" name="name" required>
+        <br><br>
+
+        <label>Phone Number</label>
+        <input type="text" name="phone" required>
+        <br><br>
+
+        <label>College / Organization</label>
+        <input type="text" name="college">
+        <br><br>
+
+        <label>Additional Notes</label>
+        <textarea name="notes"></textarea>
+        <br><br>
+
+        <button type="submit">Confirm Registration</button>
+
+    </form>
+
+</body>
+
+</html>
