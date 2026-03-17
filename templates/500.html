@@ -6,71 +6,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Server Error - EventEase</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --primary: #6c5ce7;
-            --error: #e17055;
-        }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background: linear-gradient(135deg, #e17055 0%, #d63031 100%);
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            color: #fff;
-            text-align: center;
-        }
-
-        .container {
-            max-width: 500px;
-            padding: 20px;
-        }
-
-        h1 {
-            font-size: 8rem;
-            font-weight: 800;
-            margin: 0;
-            opacity: 0.3;
-        }
-
-        h2 {
-            font-size: 1.8rem;
-            margin: 10px 0;
-        }
-
-        p {
-            opacity: 0.8;
-            margin-bottom: 30px;
-            font-size: 1.05rem;
-        }
-
-        a {
-            display: inline-block;
-            padding: 14px 35px;
-            background: #fff;
-            color: var(--error);
-            text-decoration: none;
-            border-radius: 50px;
-            font-weight: 700;
-            transition: all 0.3s;
-        }
-
-        a:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
-        }
-    </style>
+    <link rel="stylesheet" href="/static/css/style.css">
 </head>
 
-<body>
-    <div class="container">
-        <h1>500</h1>
+<body class="page-body--500">
+    <div class="error-container">
+        <h1 class="error-code">500</h1>
         <h2>Something Went Wrong</h2>
         <p>We're having trouble on our end. Please try again in a moment.</p>
-        <a href="/">Back to Home</a>
+        <a href="/" class="btn-error-home btn-error-home--500">Back to Home</a>
     </div>
 </body>
 

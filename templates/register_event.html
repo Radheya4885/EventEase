@@ -3,34 +3,45 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register - {{ event.title }}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
 </head>
 
-<body>
+<body class="page-body--reg-event">
 
-    <h2>Register for {{ event.title }}</h2>
+    <div class="reg-event-card">
+        <h2>Register for {{ event.title }}</h2>
 
-    <form method="POST" action="/register_event_submit/{{ event.id }}">
+        <form method="POST" action="/register_event_submit/{{ event.id }}">
 
-        <label>Full Name</label>
-        <input type="text" name="name" required>
-        <br><br>
+            <div class="form-group">
+                <label for="name">Full Name</label>
+                <input type="text" id="name" name="name" required>
+            </div>
 
-        <label>Phone Number</label>
-        <input type="text" name="phone" required>
-        <br><br>
+            <div class="form-group">
+                <label for="phone">Phone Number</label>
+                <input type="text" id="phone" name="phone" required>
+            </div>
 
-        <label>College / Organization</label>
-        <input type="text" name="college">
-        <br><br>
+            <div class="form-group">
+                <label for="college">College / Organization</label>
+                <input type="text" id="college" name="college">
+            </div>
 
-        <label>Additional Notes</label>
-        <textarea name="notes"></textarea>
-        <br><br>
+            <div class="form-group">
+                <label for="notes">Additional Notes</label>
+                <textarea id="notes" name="notes"></textarea>
+            </div>
 
-        <button type="submit">Confirm Registration</button>
+            <button type="submit" class="btn-submit">Confirm Registration</button>
 
-    </form>
+        </form>
+
+        <a href="/event/{{ event.id }}" class="back-link-plain" style="display:inline-block;margin-top:15px;">← Back to Event</a>
+    </div>
 
 </body>
 
