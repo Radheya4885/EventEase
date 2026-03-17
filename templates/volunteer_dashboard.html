@@ -5,140 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Volunteer Dashboard - EventEase</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --primary: #6c5ce7;
-            --secondary: #fd79a8;
-            --bg: #f8f9fa;
-            --white: #ffffff;
-            --text-dark: #2d3436;
-            --text-muted: #636e72;
-            --success: #00b894;
-        }
-
-        body {
-            background-color: var(--bg);
-            font-family: 'Inter', sans-serif;
-            margin: 0;
-            color: var(--text-dark);
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-
-        .container {
-            max-width: 900px;
-            margin: 60px auto;
-            padding: 0 20px;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        header {
-            text-align: center;
-            margin-bottom: 40px;
-        }
-
-        h1 {
-            color: var(--primary);
-            font-size: 2.5rem;
-            margin-bottom: 10px;
-            font-weight: 800;
-        }
-
-        .subtitle {
-            color: var(--text-muted);
-            font-size: 1.1rem;
-        }
-
-        /* Flash Messages */
-        .message-container {
-            margin-bottom: 30px;
-        }
-
-        .message {
-            background: #e6fffb;
-            color: var(--success);
-            padding: 15px;
-            border-radius: 12px;
-            font-weight: 600;
-            border: 1px solid var(--success);
-            text-align: center;
-        }
-
-        /* Grid Layout */
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 25px;
-        }
-
-        .card {
-            background: var(--white);
-            padding: 40px 30px;
-            border-radius: 20px;
-            text-decoration: none;
-            color: inherit;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-            transition: all 0.3s ease;
-            text-align: center;
-            border: 1px solid #eee;
-        }
-
-        .card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 15px 35px rgba(108, 92, 231, 0.15);
-            border-color: var(--primary);
-        }
-
-        .card .icon {
-            font-size: 3rem;
-            margin-bottom: 20px;
-            display: block;
-        }
-
-        .card h3 {
-            margin: 0 0 10px 0;
-            color: var(--primary);
-            font-size: 1.4rem;
-        }
-
-        .card p {
-            color: var(--text-muted);
-            font-size: 0.95rem;
-            line-height: 1.5;
-            margin: 0;
-        }
-
-        /* Footer Actions */
-        .footer-nav {
-            margin-top: 50px;
-            text-align: center;
-        }
-
-        .btn-logout {
-            text-decoration: none;
-            color: #d63031;
-            font-weight: 600;
-            padding: 10px 25px;
-            border-radius: 10px;
-            transition: background 0.2s;
-        }
-
-        .btn-logout:hover {
-            background: #fff0f0;
-        }
-
-        @media (max-width: 600px) {
-            .container { margin: 30px auto; }
-            h1 { font-size: 2rem; }
-        }
-    </style>
+    <link rel="stylesheet" href="/static/css/style.css">
 </head>
-<body>
+<body class="page-body--volunteer">
 
-    <div class="container">
-        <header>
+    <div class="vol-container">
+        <header class="vol-header">
             <h1>Volunteer Hub</h1>
             <p class="subtitle">Welcome back! Ready to make an impact today?</p>
         </header>
@@ -147,7 +19,7 @@
             {% if messages %}
             <div class="message-container">
                 {% for message in messages %}
-                    <div class="message">{{ message }}</div>
+                    <div class="message message--volunteer">{{ message }}</div>
                 {% endfor %}
             </div>
             {% endif %}

@@ -6,194 +6,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Event - EventEase</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --primary: #6c5ce7;
-            --primary-hover: #5a4bcf;
-            --bg-body: #f8f9fa;
-            --text-dark: #2d3436;
-            --border: #dfe6e9;
-            --white: #ffffff;
-        }
-
-        body {
-            background-color: var(--bg-body);
-            font-family: 'Inter', sans-serif;
-            margin: 0;
-            padding: 40px 20px;
-            color: var(--text-dark);
-        }
-
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-        }
-
-        header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        h1 {
-            color: var(--primary);
-            font-size: 2.2rem;
-            margin: 0;
-        }
-
-        .back-link {
-            display: inline-block;
-            margin-top: 10px;
-            color: var(--text-dark);
-            text-decoration: none;
-            font-size: 0.9rem;
-        }
-
-        .back-link:hover {
-            text-decoration: underline;
-        }
-
-        form {
-            background: var(--white);
-            padding: 40px;
-            border-radius: 16px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-        }
-
-        .form-section {
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid var(--border);
-        }
-
-        .form-section:last-of-type {
-            border-bottom: none;
-        }
-
-        .form-section h3 {
-            font-size: 1.1rem;
-            margin-bottom: 20px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .form-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-
-        .full-width {
-            grid-column: span 2;
-        }
-
-        label {
-            display: block;
-            font-weight: 600;
-            margin-bottom: 8px;
-            font-size: 0.9rem;
-        }
-
-        input,
-        textarea,
-        select {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            font-size: 1rem;
-            font-family: inherit;
-            box-sizing: border-box;
-            transition: border-color 0.2s;
-        }
-
-        input:focus,
-        textarea:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
-
-        textarea {
-            resize: vertical;
-            min-height: 80px;
-        }
-
-        .current-flyer {
-            margin: 10px 0;
-        }
-
-        .current-flyer img {
-            max-width: 200px;
-            border-radius: 8px;
-        }
-
-        .message-success {
-            background: #d1f7ed;
-            color: #008767;
-            padding: 12px;
-            border-radius: 10px;
-            text-align: center;
-            margin-bottom: 15px;
-            font-weight: 600;
-        }
-
-        .message-error {
-            background: #ffe0e0;
-            color: #d63031;
-            padding: 12px;
-            border-radius: 10px;
-            text-align: center;
-            margin-bottom: 15px;
-            font-weight: 600;
-        }
-
-        .btn-submit {
-            width: 100%;
-            padding: 15px;
-            background-color: var(--primary);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 1.1rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .btn-submit:hover {
-            background-color: var(--primary-hover);
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(108, 92, 231, 0.3);
-        }
-
-        .field-error {
-            color: #d63031;
-            font-size: 0.8rem;
-            margin-top: 4px;
-        }
-
-        .help-text {
-            color: #636e72;
-            font-size: 0.8rem;
-            margin-top: 4px;
-        }
-
-        @media (max-width: 600px) {
-            .form-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .full-width {
-                grid-column: span 1;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="/static/css/style.css">
 </head>
 
-<body>
-    <div class="container">
-        <header>
+<body class="page-body--form">
+    <div class="container--800">
+        <header class="form-header">
             <h1>Edit Event</h1>
-            <a href="/event/{{ event.id }}" class="back-link">← Back to Event</a>
+            <a href="/event/{{ event.id }}" class="back-link-plain">← Back to Event</a>
         </header>
 
         {% with messages = get_flashed_messages() %}
@@ -208,6 +28,7 @@
         {% endif %}
         {% endwith %}
 
+        <div class="form-card">
         <form action="/edit_event/{{ event.id }}" method="POST" enctype="multipart/form-data" id="editForm">
             <div class="form-section">
                 <h3>Basic Information</h3>
@@ -292,6 +113,7 @@
 
             <button type="submit" class="btn-submit">Save Changes</button>
         </form>
+        </div>
     </div>
 
     <script>
